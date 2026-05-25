@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
 import { db } from "@/lib/firebase";
 
 import {
@@ -25,6 +26,7 @@ export default function GalleryPage() {
   const weddingId = params.id as string;
 
   const [photos, setPhotos] = useState<Photo[]>([]);
+
   const [selectedPhoto, setSelectedPhoto] =
     useState<Photo | null>(null);
 
@@ -73,6 +75,13 @@ export default function GalleryPage() {
     <main className="min-h-screen bg-black text-white p-6">
 
       <div className="max-w-7xl mx-auto">
+
+        <Link
+          href="/dashboard"
+          className="inline-block mb-6 text-neutral-400 hover:text-white"
+        >
+          ← Zurück zum Dashboard
+        </Link>
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
 
@@ -170,13 +179,6 @@ export default function GalleryPage() {
             >
               Foto herunterladen
             </a>
-
-            <Link
-              href="/dashboard"
-              className="inline-block mb-6 text-neutral-400 hover:text-white"
-            >
-               ← Zurück zum Dashboard
-            </Link>
 
           </div>
         </div>
