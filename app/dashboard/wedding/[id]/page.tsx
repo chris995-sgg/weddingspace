@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { useParams } from "next/navigation";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Wedding = {
@@ -14,6 +14,7 @@ type Wedding = {
 export default function WeddingPage() {
   const params = useParams();
   const weddingId = params.id as string;
+  const router = useRouter();
 
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [title, setTitle] = useState("");
@@ -69,6 +70,26 @@ export default function WeddingPage() {
     setSaving(false);
   }
 
+  async function deleteEvent() {
+  const confirmed = confirm(
+    "Möchtest du dieses Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const docRef = doc(db, "weddings", weddingId);
+
+    await deleteDoc(docRef);
+
+    alert("Event wurde gelöscht.");
+    router.push("/dashboard");
+  } catch (error) {
+    console.error(error);
+    alert("Event konnte nicht gelöscht werden.");
+  }
+}
+
   if (loading) {
     return (
       <main className="min-h-screen bg-neutral-950 text-white p-6">
@@ -89,12 +110,14 @@ export default function WeddingPage() {
     <main className="min-h-screen p-6 relative text-[#3b3128]">
   <div className="max-w-4xl mx-auto">
 
+
     <Link
-      href="/dashboard"
-      className="inline-block mb-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
-    >
-      ← Zurück zum Dashboard
-    </Link>
+         href="/dashboard"
+         className="absolute top-6 left-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+           >
+         ← Zurück zum Dashboard
+     </Link>
+
 
     <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
@@ -127,6 +150,13 @@ export default function WeddingPage() {
         className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
       >
         {saving ? "Speichert..." : "Namen speichern"}
+      </button>
+
+      <button
+        onClick={deleteEvent}
+        className="block mt-4 bg-red-700 text-white px-5 py-3 rounded-2xl font-bold hover:bg-red-800 transition shadow-lg"
+      >
+        Event löschen
       </button>
 
     </div>
