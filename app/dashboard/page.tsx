@@ -108,131 +108,131 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white/20 text-white p-6">
-      <div className="max-w-5xl mx-auto">
+    <main className="min-h-screen p-6 relative text-[#3b3128]">
+  <div className="max-w-5xl mx-auto">
 
-        <div className="flex justify-between items-center mb-10">
+    <div className="flex justify-between items-center mb-10">
 
-          <div>
-            <h1 className="text-3xl font-bold">
-              WeddingSpace
-            </h1>
+      <div>
+        <h1 className="text-4xl font-bold text-[#3b3128]">
+          WeddingSpace
+        </h1>
 
-            <p className="text-neutral-400 mt-2">
-              Eingeloggt als {user?.email}
-            </p>
-          </div>
+        <p className="text-[#6b5c4d] mt-2">
+          Eingeloggt als {user?.email}
+        </p>
+      </div>
+
+      <button
+        onClick={logout}
+        className="bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+      >
+        Logout
+      </button>
+
+    </div>
+
+    <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+
+      <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-8">
+
+        <h2 className="text-2xl font-bold text-[#3b3128]">
+          Meine Events
+        </h2>
+
+        <div className="flex flex-col md:flex-row gap-2">
+
+          <input
+            value={newWeddingTitle}
+            onChange={(e) =>
+              setNewWeddingTitle(e.target.value)
+            }
+            placeholder="Name des Events"
+            className="bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+          />
 
           <button
-            onClick={logout}
-            className="bg-neutral-800 px-4 py-2 rounded-xl"
+            onClick={createWedding}
+            disabled={loading}
+            className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
           >
-            Logout
+            {loading
+              ? "Erstelle..."
+              : "Neues Event erstellen"}
           </button>
 
         </div>
+      </div>
 
-        <div className="bg-neutral-900 rounded-2xl p-6">
+      {weddings.length === 0 ? (
+        <p className="text-[#6b5c4d]">
+          Du hast noch kein Event erstellt.
+        </p>
+      ) : (
+        <div className="grid gap-4">
 
-          <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-6">
+          {weddings.map((wedding) => (
+            <div
+              key={wedding.id}
+              className="bg-white/60 backdrop-blur-xl rounded-[1.5rem] p-5 shadow-xl border border-white/50 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
+            >
 
-            <h2 className="text-2xl font-bold">
-              Meine Events
-            </h2>
+              <div>
+                <h3 className="text-xl font-bold text-[#3b3128]">
+                  {wedding.title}
+                </h3>
 
-            <div className="flex gap-2">
+                <p className="text-sm text-[#6b5c4d] mt-1">
+                  ID: {wedding.id}
+                </p>
+              </div>
 
-              <input
-                value={newWeddingTitle}
-                onChange={(e) =>
-                  setNewWeddingTitle(e.target.value)
-                }
-                placeholder="Name des Events"
-                className="bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white"
-              />
+              <div className="flex flex-col md:flex-row items-center gap-4">
 
-              <button
-                onClick={createWedding}
-                disabled={loading}
-                className="bg-white text-black px-5 py-3 rounded-xl font-bold disabled:opacity-50"
-              >
-                {loading
-                  ? "Erstelle..."
-                  : "Neues Event erstellen"}
-              </button>
+                <div className="bg-white/80 p-2 rounded-2xl shadow-lg border border-white/60">
 
-            </div>
-          </div>
-
-          {weddings.length === 0 ? (
-            <p className="text-neutral-400">
-              Du hast noch kein Event erstellt.
-            </p>
-          ) : (
-            <div className="grid gap-4">
-
-              {weddings.map((wedding) => (
-                <div
-                  key={wedding.id}
-                  className="bg-neutral-800 rounded-xl p-5 flex justify-between items-center"
-                >
-
-                  <div>
-                    <h3 className="text-xl font-bold">
-                      {wedding.title}
-                    </h3>
-
-                    <p className="text-sm text-neutral-400 mt-1">
-                      ID: {wedding.id}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="bg-white p-2 rounded-xl">
-
-                      <QRCodeCanvas
-                        value={`${window.location.origin}/upload/${wedding.id}`}
-                        size={96}
-                      />
-
-                    </div>
-
-                    <div className="flex gap-2">
-
-                      <a
-                        href={`/dashboard/wedding/${wedding.id}`}
-                        className="bg-neutral-700 hover:bg-neutral-600 px-4 py-2 rounded-xl"
-                      >
-                        Bearbeiten
-                      </a>
-
-                      <a
-                        href={`/upload/${wedding.id}`}
-                        className="bg-neutral-700 hover:bg-neutral-600 px-4 py-2 rounded-xl"
-                      >
-                        Upload
-                      </a>
-
-                      <a
-                        href={`/gallery/${wedding.id}`}
-                        className="bg-neutral-700 hover:bg-neutral-600 px-4 py-2 rounded-xl"
-                      >
-                        Galerie
-                      </a>
-
-                    </div>
-
-                  </div>
+                  <QRCodeCanvas
+                    value={`${window.location.origin}/upload/${wedding.id}`}
+                    size={96}
+                  />
 
                 </div>
-              ))}
+
+                <div className="flex flex-wrap gap-2 justify-center">
+
+                  <a
+                    href={`/dashboard/wedding/${wedding.id}`}
+                    className="bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-lg border border-white/40 hover:bg-white/80 transition"
+                  >
+                    Bearbeiten
+                  </a>
+
+                  <a
+                    href={`/upload/${wedding.id}`}
+                    className="bg-[#d4b06a] text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:opacity-90 transition"
+                  >
+                    Upload
+                  </a>
+
+                  <a
+                    href={`/gallery/${wedding.id}`}
+                    className="bg-[#3b3128] text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:bg-[#2d241d] transition"
+                  >
+                    Galerie
+                  </a>
+
+                </div>
+
+              </div>
 
             </div>
-          )}
+          ))}
 
         </div>
-      </div>
-    </main>
+      )}
+
+    </div>
+  </div>
+</main>
   );
 }
