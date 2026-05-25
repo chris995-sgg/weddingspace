@@ -119,7 +119,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm bg-neutral-900 rounded-2xl p-6 shadow-xl">
 
         <h1 className="text-3xl font-bold mb-6 text-center">
-          Hochzeitsspiel
+          Weddingspace
         </h1>
 
         {error && (
