@@ -108,7 +108,7 @@ export default function WeddingPage() {
 
   return (
     <main className="min-h-screen p-6 relative text-[#3b3128]">
-  <div className="max-w-4xl mx-auto">
+  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
 
     <Link
