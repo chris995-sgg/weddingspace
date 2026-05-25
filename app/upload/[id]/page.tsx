@@ -1,99 +1,108 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 export default function UploadPage() {
   const params = useParams();
+
   const weddingId = params.id as string;
 
   const [guestName, setGuestName] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [done, setDone] = useState(false);
+
+  const [loading, setLoading] = useState(false);
 
   async function uploadPhoto() {
     if (!file) {
-      alert("Bitte ein Foto auswählen.");
+      alert("Bitte wähle ein Foto aus.");
       return;
     }
 
-    setUploading(true);
-    setDone(false);
+    setLoading(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("weddingId", weddingId);
-    formData.append("guestName", guestName);
+    try {
+      const formData = new FormData();
 
-    const response = await fetch("/api/upload-photo", {
-      method: "POST",
-      body: formData,
-    });
+      formData.append("file", file);
+      formData.append("weddingId", weddingId);
+      formData.append("guestName", guestName);
 
-    setUploading(false);
+      const response = await fetch("/api/upload-photo", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      alert("Upload fehlgeschlagen.");
-      return;
+      if (!response.ok) {
+        throw new Error("Upload fehlgeschlagen");
+      }
+
+      alert("Foto erfolgreich hochgeladen!");
+
+      setFile(null);
+      setGuestName("");
+    } catch (error) {
+      console.error(error);
+
+      alert("Fehler beim Upload.");
     }
 
-    setDone(true);
-    setFile(null);
-    setGuestName("");
+    setLoading(false);
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white p-6 flex items-center justify-center">
-      <div className="w-full max-w-md bg-neutral-900 rounded-2xl p-6">
-        <h1 className="text-3xl font-bold text-center mb-2">
+    <main className="min-h-screen flex items-center justify-center p-6 relative">
+
+      <Link
+        href="/dashboard"
+        className="absolute top-6 left-6 bg-white/70 backdrop-blur text-black px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-white"
+      >
+        ← Zurück zum Dashboard
+      </Link>
+
+      <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/40">
+
+        <h1 className="text-3xl font-bold mb-2 text-center text-black">
           Foto hochladen
         </h1>
 
-        <p className="text-neutral-400 text-center mb-6">
-          Teile dein schönstes Foto mit dem Brautpaar.
+        <p className="text-center text-neutral-700 mb-6">
+          Teile deinen schönsten Moment ✨
         </p>
 
-        {done && (
-          <div className="mb-5 rounded-xl border border-green-700 bg-green-900/40 p-4 text-center">
-            Foto erfolgreich hochgeladen ❤️
-          </div>
-        )}
-
         <input
-          className="w-full mb-4 p-3 rounded-xl bg-neutral-800 border border-neutral-700"
-          placeholder="Dein Name optional"
+          type="text"
+          placeholder="Dein Name"
           value={guestName}
           onChange={(e) => setGuestName(e.target.value)}
+          className="w-full mb-4 p-3 rounded-xl bg-white/80 border border-neutral-300 text-black"
         />
 
         <input
-          className="w-full mb-5 p-3 rounded-xl bg-neutral-800 border border-neutral-700"
           type="file"
           accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          onChange={(e) =>
+            setFile(e.target.files?.[0] || null)
+          }
+          className="w-full mb-5 text-black"
         />
-
-        {file && (
-          <p className="text-sm text-neutral-400 mb-4">
-            Ausgewählt: {file.name}
-          </p>
-        )}
 
         <button
           onClick={uploadPhoto}
-          disabled={uploading}
-          className="w-full bg-white text-black p-4 rounded-xl font-bold disabled:opacity-50"
+          disabled={loading}
+          className="w-full bg-black text-white p-3 rounded-xl font-bold hover:bg-neutral-800 transition disabled:opacity-50"
         >
-          {uploading ? "Lädt hoch..." : "Foto hochladen"}
+          {loading
+            ? "Lade hoch..."
+            : "Foto hochladen"}
         </button>
 
         <Link
-         href={`/gallery/${weddingId}`}
-         className="block mt-4 text-center bg-neutral-700 p-4 rounded-xl font-bold"
+          href={`/gallery/${weddingId}`}
+          className="block mt-4 text-center bg-[#d4b06a] text-white p-4 rounded-xl font-bold hover:opacity-90 transition"
         >
-         Zur WeddingSpace Galerie
+          Zur Bildergalerie
         </Link>
 
       </div>

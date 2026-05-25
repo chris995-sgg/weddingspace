@@ -108,7 +108,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white p-6">
+    <main className="min-h-screen bg-white/20 text-white p-6">
       <div className="max-w-5xl mx-auto">
 
         <div className="flex justify-between items-center mb-10">
@@ -137,7 +137,7 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-6">
 
             <h2 className="text-2xl font-bold">
-              Meine WeddingSpaces
+              Meine Events
             </h2>
 
             <div className="flex gap-2">
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setNewWeddingTitle(e.target.value)
                 }
-                placeholder="Name der Hochzeit"
+                placeholder="Name des Events"
                 className="bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white"
               />
 
@@ -158,7 +158,7 @@ export default function DashboardPage() {
               >
                 {loading
                   ? "Erstelle..."
-                  : "Neue Hochzeit erstellen"}
+                  : "Neues Event erstellen"}
               </button>
 
             </div>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
 
           {weddings.length === 0 ? (
             <p className="text-neutral-400">
-              Du hast noch keine Hochzeit erstellt.
+              Du hast noch kein Event erstellt.
             </p>
           ) : (
             <div className="grid gap-4">
