@@ -52,60 +52,60 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 relative">
+   <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
 
-      <Link
-        href="/dashboard"
-        className="absolute top-6 left-6 bg-white/70 backdrop-blur text-black px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-white"
-      >
-        ← Zurück zum Dashboard
-      </Link>
+  <Link
+    href="/dashboard"
+    className="absolute top-6 left-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+  >
+    ← Zurück zum Dashboard
+  </Link>
 
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/40">
+  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
-        <h1 className="text-3xl font-bold mb-2 text-center text-black">
-          Foto hochladen
-        </h1>
+    <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
+      Foto hochladen
+    </h1>
 
-        <p className="text-center text-neutral-700 mb-6">
-          Teile deinen schönsten Moment ✨
-        </p>
+    <p className="text-center text-[#6b5c4d] mb-8">
+      Teile deinen schönsten Moment ✨
+    </p>
 
-        <input
-          type="text"
-          placeholder="Dein Name"
-          value={guestName}
-          onChange={(e) => setGuestName(e.target.value)}
-          className="w-full mb-4 p-3 rounded-xl bg-white/80 border border-neutral-300 text-black"
-        />
+    <input
+      type="text"
+      placeholder="Dein Name"
+      value={guestName}
+      onChange={(e) => setGuestName(e.target.value)}
+      className="w-full mb-4 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+    />
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) =>
-            setFile(e.target.files?.[0] || null)
-          }
-          className="w-full mb-5 text-black"
-        />
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) =>
+        setFile(e.target.files?.[0] || null)
+      }
+      className="w-full mb-6 text-[#4a4036]"
+    />
 
-        <button
-          onClick={uploadPhoto}
-          disabled={loading}
-          className="w-full bg-black text-white p-3 rounded-xl font-bold hover:bg-neutral-800 transition disabled:opacity-50"
-        >
-          {loading
-            ? "Lade hoch..."
-            : "Foto hochladen"}
-        </button>
+    <button
+      onClick={uploadPhoto}
+      disabled={loading}
+      className="w-full bg-[#3b3128] text-white p-4 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
+    >
+      {loading
+        ? "Lade hoch..."
+        : "Foto hochladen"}
+    </button>
 
-        <Link
-          href={`/gallery/${weddingId}`}
-          className="block mt-4 text-center bg-[#d4b06a] text-white p-4 rounded-xl font-bold hover:opacity-90 transition"
-        >
-          Zur Bildergalerie
-        </Link>
+    <Link
+      href={`/gallery/${weddingId}`}
+      className="block mt-4 text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+    >
+      Zur Bildergalerie
+    </Link>
 
-      </div>
-    </main>
+  </div>
+</main>
   );
 }
