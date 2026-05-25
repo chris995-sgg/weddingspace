@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
     try {
       await addDoc(collection(db, "weddings"), {
-        title: "Neue Hochzeit",
+        title: "Neues Event",
         ownerId: user.uid,
         ownerEmail: user.email,
         createdAt: new Date(),
@@ -111,7 +111,7 @@ export default function DashboardPage() {
 
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">
-              Meine Hochzeiten
+              Meine Events
             </h2>
 
             <button
@@ -121,13 +121,13 @@ export default function DashboardPage() {
             >
               {loading
                 ? "Erstelle..."
-                : "Neue Hochzeit erstellen"}
+                : "Neues Event erstellen"}
             </button>
           </div>
 
           {weddings.length === 0 ? (
             <p className="text-neutral-400">
-              Du hast noch keine Hochzeit erstellt.
+              Du hast noch kein Event erstellt.
             </p>
           ) : (
             <div className="grid gap-4">

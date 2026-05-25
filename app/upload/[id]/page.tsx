@@ -93,7 +93,7 @@ export default function UploadPage() {
          href={`/gallery/${weddingId}`}
          className="block mt-4 text-center bg-neutral-700 p-4 rounded-xl font-bold"
         >
-         Zur Bildergalerie
+         Zur WeddingSpace Galerie
         </Link>
 
       </div>
