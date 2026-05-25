@@ -115,62 +115,67 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-neutral-950 text-white p-6">
-      <div className="w-full max-w-sm bg-neutral-900 rounded-2xl p-6 shadow-xl">
+    <main className="min-h-screen flex items-center justify-center p-6 relative text-[#3b3128]">
 
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          WeddingSpace
-        </h1>
+  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
-        {error && (
-          <div className="mb-4 bg-red-900/40 border border-red-700 text-red-200 p-3 rounded-xl">
-            {error}
-          </div>
-        )}
+    <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
+      WeddingSpace
+    </h1>
 
-        {success && (
-          <div className="mb-4 bg-green-900/40 border border-green-700 text-green-200 p-3 rounded-xl">
-            {success}
-          </div>
-        )}
+    <p className="text-center text-[#6b5c4d] mb-8">
+      Deine digitale Hochzeitsplattform
+    </p>
 
-        <input
-          className="w-full mb-3 p-3 rounded-xl bg-neutral-800 border border-neutral-700"
-          placeholder="E-Mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          className="w-full mb-5 p-3 rounded-xl bg-neutral-800 border border-neutral-700"
-          placeholder="Passwort"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={login}
-          className="w-full mb-3 p-3 rounded-xl bg-white text-black font-bold"
-        >
-          Einloggen
-        </button>
-
-        <button
-          onClick={register}
-          className="w-full mb-3 p-3 rounded-xl bg-neutral-700 font-bold"
-        >
-          Account erstellen
-        </button>
-
-        <button
-          onClick={resetPassword}
-          className="w-full p-3 rounded-xl text-neutral-300 underline"
-        >
-          Passwort vergessen?
-        </button>
-
+    {error && (
+      <div className="mb-4 bg-red-100/80 border border-red-300 text-red-700 p-4 rounded-2xl shadow">
+        {error}
       </div>
-    </main>
+    )}
+
+    {success && (
+      <div className="mb-4 bg-green-100/80 border border-green-300 text-green-700 p-4 rounded-2xl shadow">
+        {success}
+      </div>
+    )}
+
+    <input
+      className="w-full mb-4 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      placeholder="E-Mail"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+    />
+
+    <input
+      className="w-full mb-6 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      placeholder="Passwort"
+      type="password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+    />
+
+    <button
+      onClick={login}
+      className="w-full mb-3 bg-[#3b3128] text-white p-4 rounded-2xl font-bold hover:bg-[#2d241d] transition shadow-lg"
+    >
+      Einloggen
+    </button>
+
+    <button
+      onClick={register}
+      className="w-full mb-4 bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+    >
+      Account erstellen
+    </button>
+
+    <button
+      onClick={resetPassword}
+      className="w-full p-3 rounded-2xl text-[#6b5c4d] underline hover:text-[#3b3128] transition"
+    >
+      Passwort vergessen?
+    </button>
+
+  </div>
+</main>
   );
 }

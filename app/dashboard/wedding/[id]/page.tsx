@@ -72,61 +72,65 @@ export default function WeddingPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-neutral-950 text-white p-6">
-        Lade Hochzeit...
+        Lade Event...
       </main>
     );
   }
 
   if (!wedding) {
     return (
-      <main className="min-h-screen bg-neutral-950 text-white p-6">
-        Hochzeit nicht gefunden
+      <main className="min-h-screen p-6 relative text-[#3b3128]">
+        Event nicht gefunden
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white p-6">
-      <div className="max-w-4xl mx-auto">
+    <main className="min-h-screen p-6 relative text-[#3b3128]">
+  <div className="max-w-4xl mx-auto">
 
-        <Link
-          href="/dashboard"
-          className="inline-block mb-6 text-neutral-400 hover:text-white"
-        >
-          ← Zurück zum Dashboard
-        </Link>
+    <Link
+      href="/dashboard"
+      className="inline-block mb-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+    >
+      ← Zurück zum Dashboard
+    </Link>
 
-        <div className="bg-neutral-900 rounded-2xl p-6">
-          <h1 className="text-3xl font-bold mb-2">
-            Hochzeit bearbeiten
-          </h1>
+    <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
-          <p className="text-neutral-400 mb-8">
-            Besitzer: {wedding.ownerEmail}
-          </p>
+      <h1 className="text-4xl font-bold mb-2 text-[#3b3128]">
+        Event bearbeiten
+      </h1>
 
-          <div className="mb-6">
-            <label className="block mb-2 text-sm text-neutral-400">
-              Name der Hochzeit
-            </label>
+      <p className="text-[#6b5c4d] mb-8">
+        Besitzer: {wedding.ownerEmail}
+      </p>
 
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white"
-              placeholder="z. B. Lisa & Tom"
-            />
-          </div>
+      <div className="mb-6">
 
-          <button
-            onClick={saveTitle}
-            disabled={saving}
-            className="bg-white text-black px-5 py-3 rounded-xl font-bold disabled:opacity-50"
-          >
-            {saving ? "Speichert..." : "Namen speichern"}
-          </button>
-        </div>
+        <label className="block mb-2 text-sm text-[#6b5c4d]">
+          Name des Events
+        </label>
+
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+          placeholder="z. B. Lisa & Tom"
+        />
+
       </div>
-    </main>
+
+      <button
+        onClick={saveTitle}
+        disabled={saving}
+        className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
+      >
+        {saving ? "Speichert..." : "Namen speichern"}
+      </button>
+
+    </div>
+  </div>
+</main>
   );
 }
