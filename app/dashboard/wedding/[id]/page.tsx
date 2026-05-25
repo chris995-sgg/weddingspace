@@ -107,9 +107,7 @@ export default function WeddingPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 relative text-[#3b3128]">
-  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
-
+   <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
 
     <Link
          href="/dashboard"
@@ -119,7 +117,7 @@ export default function WeddingPage() {
      </Link>
 
 
-    <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
       <h1 className="text-4xl font-bold mb-2 text-[#3b3128]">
         Event bearbeiten
@@ -159,7 +157,7 @@ export default function WeddingPage() {
         Event löschen
       </button>
 
-    </div>
+    
   </div>
 </main>
   );
