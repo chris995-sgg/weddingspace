@@ -7,9 +7,9 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyBEquD6-nod1C9JDPMvyY9WnrULMr5vfS4",
-  authDomain: "hochzeitsplatform.firebaseapp.com",
-  projectId: "hochzeitsplatform",
-  storageBucket: "hochzeitsplatform.firebasestorage.app",
+  authDomain: "WeddingSpace.firebaseapp.com",
+  projectId: "WeddingSpace",
+  storageBucket: "WeddingSpace.firebasestorage.app",
   messagingSenderId: "213128616705",
   appId: "1:213128616705:web:0764952457238c8d695900"
 };

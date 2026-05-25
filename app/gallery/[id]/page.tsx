@@ -77,7 +77,7 @@ export default function GalleryPage() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
 
           <h1 className="text-4xl font-bold text-center">
-            Hochzeitsgalerie
+            WeddingSpace Galerie
           </h1>
 
           <Link
@@ -170,6 +170,13 @@ export default function GalleryPage() {
             >
               Foto herunterladen
             </a>
+
+            <Link
+              href="/dashboard"
+              className="inline-block mb-6 text-neutral-400 hover:text-white"
+            >
+               ← Zurück zum Dashboard
+            </Link>
 
           </div>
         </div>
