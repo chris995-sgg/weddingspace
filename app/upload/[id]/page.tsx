@@ -26,7 +26,7 @@ async function uploadPhoto() {
   setUploadedCount(0);
 
   try {
-    const CONCURRENT_UPLOADS = 3;
+    const CONCURRENT_UPLOADS = 5;
 
     let completed = 0;
 
