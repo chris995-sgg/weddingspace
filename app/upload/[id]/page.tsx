@@ -65,20 +65,32 @@ async function uploadPhoto() {
   <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
 <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
-  Foto hochladen TEST 123
+  Foto hochladen
 </h1>
 
     <p className="text-center text-[#6b5c4d] mb-8">
       Teile deinen schönsten Moment ✨
     </p>
 
-    <input
-      type="text"
-      placeholder="Dein Name"
-      value={guestName}
-      onChange={(e) => setGuestName(e.target.value)}
-      className="w-full mb-4 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
-    />
+   <label className="block w-full mb-6 cursor-pointer bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-4 text-center text-[#3b3128] font-semibold shadow hover:bg-white/90 transition">
+  Fotos auswählen
+
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    onChange={(e) =>
+      setFiles(Array.from(e.target.files || []))
+    }
+    className="hidden"
+  />
+</label>
+
+{files.length > 0 && (
+  <p className="mb-4 text-center text-[#6b5c4d]">
+    {files.length} Foto(s) ausgewählt
+  </p>
+)}
 
    <input
   type="file"
