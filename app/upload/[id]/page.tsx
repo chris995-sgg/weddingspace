@@ -72,7 +72,13 @@ async function uploadPhoto() {
       Teile deinen schönsten Moment ✨
     </p>
 
-   <label className="block w-full mb-6 cursor-pointer bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-4 text-center text-[#3b3128] font-semibold shadow hover:bg-white/90 transition">
+{files.length > 0 && (
+  <p className="mb-4 text-center text-[#6b5c4d] font-semibold">
+    {files.length} Foto(s) ausgewählt
+  </p>
+)}
+
+<label className="block w-full mb-6 cursor-pointer bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-4 text-center text-[#3b3128] font-semibold shadow hover:bg-white/90 transition">
   Fotos auswählen
 
   <input
@@ -85,12 +91,6 @@ async function uploadPhoto() {
     className="hidden"
   />
 </label>
-
-{files.length > 0 && (
-  <p className="mb-4 text-center text-[#6b5c4d]">
-    {files.length} Foto(s) ausgewählt
-  </p>
-)}
 
    <input
   type="file"
