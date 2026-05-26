@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     const fileName = `${Date.now()}-${file.name}`;
 
-    const dropboxPath = `/APP/WeddingSpace/${weddingId}/${fileName}`;
+    const dropboxPath = `/${weddingId}/${fileName}`;
 
     const bytes = await file.arrayBuffer();
     const uploadResponse = await fetch(
