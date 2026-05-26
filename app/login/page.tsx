@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 import {
   createUserWithEmailAndPassword,
@@ -20,40 +22,43 @@ export default function LoginPage() {
 
   const router = useRouter();
 
-  async function register() {
-    setError("");
-    setSuccess("");
+ async function register() {
+  setError("");
+  setSuccess("");
 
-    try {
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
 
-      setSuccess("Account erfolgreich erstellt!");
+    const allowedRef = doc(db, "allowedUsers", normalizedEmail);
+    const allowedSnap = await getDoc(allowedRef);
 
-      router.push("/dashboard");
-    } catch (error: any) {
-      console.error(error);
+    if (!allowedSnap.exists() || allowedSnap.data().allowed !== true) {
+      setError("Diese E-Mail-Adresse ist nicht zur Registrierung freigegeben.");
+      return;
+    }
 
-      if (error.code === "auth/weak-password") {
-        setError(
-          "Das Passwort muss mindestens 6 Zeichen lang sein."
-        );
-      } else if (
-        error.code === "auth/email-already-in-use"
-      ) {
-        setError(
-          "Diese E-Mail-Adresse wird bereits verwendet."
-        );
-      } else if (error.code === "auth/invalid-email") {
-        setError("Ungültige E-Mail-Adresse.");
-      } else {
-        setError("Account konnte nicht erstellt werden.");
-      }
+    await createUserWithEmailAndPassword(
+      auth,
+      normalizedEmail,
+      password
+    );
+
+    setSuccess("Account erfolgreich erstellt!");
+    router.push("/dashboard");
+  } catch (error: any) {
+    console.error(error);
+
+    if (error.code === "auth/weak-password") {
+      setError("Das Passwort muss mindestens 6 Zeichen lang sein.");
+    } else if (error.code === "auth/email-already-in-use") {
+      setError("Diese E-Mail-Adresse wird bereits verwendet.");
+    } else if (error.code === "auth/invalid-email") {
+      setError("Ungültige E-Mail-Adresse.");
+    } else {
+      setError("Account konnte nicht erstellt werden.");
     }
   }
+}
 
   async function login() {
     setError("");
