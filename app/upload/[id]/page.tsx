@@ -10,19 +10,20 @@ export default function UploadPage() {
   const weddingId = params.id as string;
 
   const [guestName, setGuestName] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(false);
 
-  async function uploadPhoto() {
-    if (!file) {
-      alert("Bitte wähle ein Foto aus.");
-      return;
-    }
+async function uploadPhoto() {
+  if (files.length === 0) {
+    alert("Bitte wähle mindestens ein Foto aus.");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
+  try {
+    for (const file of files) {
       const formData = new FormData();
 
       formData.append("file", file);
@@ -35,22 +36,22 @@ export default function UploadPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Upload fehlgeschlagen");
+        const data = await response.json();
+        throw new Error(data.error || "Upload fehlgeschlagen");
       }
-
-      alert("Foto erfolgreich hochgeladen!");
-
-      setFile(null);
-      setGuestName("");
-    } catch (error) {
-      console.error(error);
-
-      alert("Fehler beim Upload.");
     }
 
-    setLoading(false);
+    alert("Fotos erfolgreich hochgeladen!");
+
+    setFiles([]);
+    setGuestName("");
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message || "Fehler beim Upload.");
   }
 
+  setLoading(false);
+}
   return (
    <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
 
@@ -63,9 +64,9 @@ export default function UploadPage() {
 
   <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
-    <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
-      Foto hochladen
-    </h1>
+<h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
+  Foto hochladen TEST 123
+</h1>
 
     <p className="text-center text-[#6b5c4d] mb-8">
       Teile deinen schönsten Moment ✨
@@ -79,14 +80,15 @@ export default function UploadPage() {
       className="w-full mb-4 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
     />
 
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setFile(e.target.files?.[0] || null)
-      }
-      className="w-full mb-6 text-[#4a4036]"
-    />
+   <input
+  type="file"
+  accept="image/*"
+  multiple
+  onChange={(e) =>
+    setFiles(Array.from(e.target.files || []))
+  }
+  className="w-full mb-6 text-[#4a4036]"
+/>
 
     <button
       onClick={uploadPhoto}
@@ -95,7 +97,7 @@ export default function UploadPage() {
     >
       {loading
         ? "Lade hoch..."
-        : "Foto hochladen"}
+        : "Fotos hochladen"}
     </button>
 
     <Link
