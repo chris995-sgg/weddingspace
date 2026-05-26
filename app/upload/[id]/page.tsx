@@ -67,7 +67,8 @@ async function uploadPhoto() {
 
           completed++;
 
-          setUploadedCount(completed);
+          
+          setUploadedCount((prev) => prev + 1);
         })
       );
     }
@@ -108,17 +109,19 @@ async function uploadPhoto() {
       Teile deinen schönsten Moment ✨
     </p>
 
+{loading && (
+  <p className="mb-4 text-center text-[#6b5c4d] font-semibold">
+    {uploadedCount} von {files.length} Fotos hochgeladen
+  </p>
+)}
+
 {files.length > 0 && (
   <p className="mb-4 text-center text-[#6b5c4d] font-semibold">
     {files.length} Foto(s) ausgewählt
   </p>
 )}
 
-{loading && (
-  <p className="mb-4 text-center text-[#6b5c4d] font-semibold">
-    {uploadedCount} von {files.length} Fotos hochgeladen
-  </p>
-)}
+
 
 <label className="block w-full mb-4 cursor-pointer bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-4 text-center text-[#3b3128] font-semibold shadow hover:bg-white/90 transition">
   Fotos auswählen
