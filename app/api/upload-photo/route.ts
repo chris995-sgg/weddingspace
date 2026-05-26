@@ -7,9 +7,9 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyBEquD6-nod1C9JDPMvyY9WnrULMr5vfS4",
-  authDomain: "WeddingSpace.firebaseapp.com",
-  projectId: "WeddingSpace",
-  storageBucket: "WeddingSpace.firebasestorage.app",
+  authDomain: "hochzeitsplatform.firebaseapp.com",
+  projectId: "hochzeitsplatform",
+  storageBucket: "hochzeitsplatform.firebasestorage.app",
   messagingSenderId: "213128616705",
   appId: "1:213128616705:web:0764952457238c8d695900"
 };
@@ -43,10 +43,9 @@ export async function POST(req: Request) {
 
     const fileName = `${Date.now()}-${file.name}`;
 
-    const dropboxPath = `/hochzeiten/${weddingId}/${fileName}`;
+    const dropboxPath = `/APP/WeddingSpace/${weddingId}/${fileName}`;
 
     const bytes = await file.arrayBuffer();
-
     const uploadResponse = await fetch(
       "https://content.dropboxapi.com/2/files/upload",
       {
