@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+
 export default function UploadPage() {
   const params = useParams();
 
@@ -13,6 +14,7 @@ export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [uploadedCount, setUploadedCount] = useState(0);
 
 async function uploadPhoto() {
   if (files.length === 0) {
@@ -21,37 +23,69 @@ async function uploadPhoto() {
   }
 
   setLoading(true);
+  setUploadedCount(0);
 
   try {
-    await Promise.all(
-      files.map(async (file) => {
-        const formData = new FormData();
+    const CONCURRENT_UPLOADS = 3;
 
-        formData.append("file", file);
-        formData.append("weddingId", weddingId);
-        formData.append("guestName", guestName);
+    let completed = 0;
 
-        const response = await fetch("/api/upload-photo", {
-          method: "POST",
-          body: formData,
-        });
+    for (
+      let i = 0;
+      i < files.length;
+      i += CONCURRENT_UPLOADS
+    ) {
+      const batch = files.slice(
+        i,
+        i + CONCURRENT_UPLOADS
+      );
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Upload fehlgeschlagen");
-        }
-      })
-    );
+      await Promise.all(
+        batch.map(async (file) => {
+          const formData = new FormData();
+
+          formData.append("file", file);
+          formData.append("weddingId", weddingId);
+          formData.append("guestName", guestName);
+
+          const response = await fetch(
+            "/api/upload-photo",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          if (!response.ok) {
+            const data = await response.json();
+
+            throw new Error(
+              data.error ||
+                "Upload fehlgeschlagen"
+            );
+          }
+
+          completed++;
+
+          setUploadedCount(completed);
+        })
+      );
+    }
 
     alert("Fotos erfolgreich hochgeladen!");
+
     setFiles([]);
     setGuestName("");
   } catch (error: any) {
     console.error(error);
-    alert(error.message || "Fehler beim Upload.");
+
+    alert(
+      error.message || "Fehler beim Upload."
+    );
   }
 
   setLoading(false);
+
 
 }
   return (
@@ -77,6 +111,12 @@ async function uploadPhoto() {
 {files.length > 0 && (
   <p className="mb-4 text-center text-[#6b5c4d] font-semibold">
     {files.length} Foto(s) ausgewählt
+  </p>
+)}
+
+{loading && (
+  <p className="mb-4 text-center text-[#6b5c4d] font-semibold">
+    {uploadedCount} von {files.length} Fotos hochgeladen
   </p>
 )}
 
