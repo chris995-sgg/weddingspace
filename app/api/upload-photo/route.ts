@@ -5,6 +5,55 @@ import {
   collection,
 } from "firebase/firestore";
 
+async function getDropboxAccessToken() {
+  const refreshToken =
+    process.env.DROPBOX_REFRESH_TOKEN;
+
+  const appKey =
+    process.env.DROPBOX_APP_KEY;
+
+  const appSecret =
+    process.env.DROPBOX_APP_SECRET;
+
+  if (!refreshToken || !appKey || !appSecret) {
+    throw new Error(
+      "Dropbox Environment Variables fehlen"
+    );
+  }
+
+  const response = await fetch(
+    "https://api.dropboxapi.com/oauth2/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: appKey,
+        client_secret: appSecret,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error(
+      "Dropbox Token Fehler:",
+      data
+    );
+
+    throw new Error(
+      "Dropbox Access Token konnte nicht erneuert werden"
+    );
+  }
+
+  return data.access_token;
+}
+
 const firebaseConfig = {
   apiKey: "AIzaSyBEquD6-nod1C9JDPMvyY9WnrULMr5vfS4",
   authDomain: "hochzeitsplatform.firebaseapp.com",
@@ -32,14 +81,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const token = process.env.DROPBOX_ACCESS_TOKEN;
+    const token = await getDropboxAccessToken();
 
-    if (!token) {
-      return Response.json(
-        { error: "Dropbox Token fehlt" },
-        { status: 500 }
-      );
-    }
 
     const fileName = `${Date.now()}-${file.name}`;
 
