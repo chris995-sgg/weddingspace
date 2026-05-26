@@ -78,7 +78,7 @@ async function uploadPhoto() {
   </p>
 )}
 
-<label className="block w-full mb-6 cursor-pointer bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-4 text-center text-[#3b3128] font-semibold shadow hover:bg-white/90 transition">
+<label className="block w-full mb-4git hu cursor-pointer bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-4 text-center text-[#3b3128] font-semibold shadow hover:bg-white/90 transition">
   Fotos auswählen
 
   <input
