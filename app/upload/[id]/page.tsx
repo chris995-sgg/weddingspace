@@ -69,6 +69,7 @@ async function uploadPhoto() {
 
           
           setUploadedCount((prev) => prev + 1);
+          await new Promise((resolve) => setTimeout(resolve, 50));
         })
       );
     }
