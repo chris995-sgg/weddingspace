@@ -92,15 +92,6 @@ async function uploadPhoto() {
   />
 </label>
 
-   <input
-  type="file"
-  accept="image/*"
-  multiple
-  onChange={(e) =>
-    setFiles(Array.from(e.target.files || []))
-  }
-  className="w-full mb-6 text-[#4a4036]"
-/>
 
     <button
       onClick={uploadPhoto}
