@@ -82,6 +82,11 @@ export default function DashboardPage() {
   async function createWedding() {
     if (!user) return;
 
+    if (weddings.length >= 3) {
+      alert("Du kannst maximal 3 Events erstellen.");
+    return;
+}
+
     if (!newWeddingTitle.trim()) {
       alert("Bitte gib einen Namen ein.");
       return;
