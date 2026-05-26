@@ -23,26 +23,27 @@ async function uploadPhoto() {
   setLoading(true);
 
   try {
-    for (const file of files) {
-      const formData = new FormData();
+    await Promise.all(
+      files.map(async (file) => {
+        const formData = new FormData();
 
-      formData.append("file", file);
-      formData.append("weddingId", weddingId);
-      formData.append("guestName", guestName);
+        formData.append("file", file);
+        formData.append("weddingId", weddingId);
+        formData.append("guestName", guestName);
 
-      const response = await fetch("/api/upload-photo", {
-        method: "POST",
-        body: formData,
-      });
+        const response = await fetch("/api/upload-photo", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Upload fehlgeschlagen");
-      }
-    }
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Upload fehlgeschlagen");
+        }
+      })
+    );
 
     alert("Fotos erfolgreich hochgeladen!");
-
     setFiles([]);
     setGuestName("");
   } catch (error: any) {
@@ -51,6 +52,7 @@ async function uploadPhoto() {
   }
 
   setLoading(false);
+
 }
   return (
    <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
