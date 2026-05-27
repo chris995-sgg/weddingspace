@@ -108,12 +108,22 @@ async function downloadSelectedPhotos() {
 
     const url = URL.createObjectURL(zipBlob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "weddingspace-fotos.zip";
-    link.click();
+const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-    URL.revokeObjectURL(url);
+if (isIOS) {
+  window.open(url, "_blank");
+} else {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "weddingspace-fotos.zip";
+  link.click();
+}
+
+setTimeout(() => {
+  URL.revokeObjectURL(url);
+}, 5000);
+
   } catch (error) {
     console.error(error);
     alert("Download fehlgeschlagen.");
@@ -123,7 +133,7 @@ async function downloadSelectedPhotos() {
 }
 
 return (
-  <main className="min-h-screen p-6 relative text-[#3b3128]">
+  <main className="min-h-screen pt-24 p-6 relative text-[#3b3128]">
 
     <div className="max-w-7xl mx-auto">
 
@@ -138,7 +148,7 @@ return (
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 
-          <h1 className="text-4xl font-bold text-center text-[#3b3128]">
+          <h1 className="text-3xl font-bold text-center text-[#3b3128]">
             WeddingSpace Galerie
           </h1>
 
@@ -262,7 +272,7 @@ return (
             <img
               src={selectedPhoto.imageUrl}
               alt=""
-              className="w-full max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-3xl shadow-2xl"
             />
 
             <a
