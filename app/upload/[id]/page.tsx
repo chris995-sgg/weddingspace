@@ -87,7 +87,7 @@ export default function UploadPage() {
     setUploadedCount(0);
 
     try {
-      const CONCURRENT_UPLOADS = 2;
+      const CONCURRENT_UPLOADS = 4;
 
       for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
         const batch = files.slice(i, i + CONCURRENT_UPLOADS);
