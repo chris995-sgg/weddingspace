@@ -11,6 +11,7 @@
   "dependencies": {
     "dropbox": "^10.34.0",
     "firebase": "^12.13.0",
+    "jszip": "^3.10.1",
     "next": "16.2.6",
     "qrcode.react": "^4.2.0",
     "react": "19.2.4",
