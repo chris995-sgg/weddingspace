@@ -16,6 +16,8 @@ export default function UploadPage() {
 
   async function uploadSingleFile(file: File) {
     let uploadFile = file;
+    const thumbnailFile =
+  await createThumbnail(file);
 
     if (file.size > 5 * 1024 * 1024) {
       uploadFile = await imageCompression(file, {
@@ -23,6 +25,47 @@ export default function UploadPage() {
         useWebWorker: true,
       });
     }
+
+    // ==========================================
+// THUMBNAIL UPLOAD LINK HOLEN
+// ==========================================
+const thumbnailUploadLinkResponse =
+  await fetch(
+    "/api/create-upload-link",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        weddingId,
+        fileName:
+          "thumb-" +
+          uploadFile.name,
+        sizeBytes:
+          thumbnailFile.size,
+      }),
+    }
+  );
+
+const thumbnailUploadLinkData =
+  await thumbnailUploadLinkResponse.json();
+
+if (!thumbnailUploadLinkResponse.ok) {
+  throw new Error(
+    thumbnailUploadLinkData.error ||
+      "Thumbnail Upload-Link Fehler"
+  );
+}
+
+    async function createThumbnail(file: File) {
+  return await imageCompression(file, {
+    maxSizeMB: 0.3,
+    maxWidthOrHeight: 500,
+    useWebWorker: true,
+  });
+}
 
     const uploadLinkResponse = await fetch("/api/create-upload-link", {
       method: "POST",
@@ -53,6 +96,30 @@ export default function UploadPage() {
     if (!dropboxUploadResponse.ok) {
       throw new Error("Dropbox Upload fehlgeschlagen");
     }
+
+    // ==========================================
+// THUMBNAIL ZU DROPBOX LADEN
+// ==========================================
+const thumbnailDropboxUploadResponse =
+  await fetch(
+    thumbnailUploadLinkData.uploadLink,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/octet-stream",
+      },
+      body: thumbnailFile,
+    }
+  );
+
+if (
+  !thumbnailDropboxUploadResponse.ok
+) {
+  throw new Error(
+    "Thumbnail Upload fehlgeschlagen"
+  );
+}
 
     const completeResponse = await fetch("/api/complete-upload", {
       method: "POST",

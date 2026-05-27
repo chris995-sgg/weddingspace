@@ -17,8 +17,10 @@ import { useParams } from "next/navigation";
 type Photo = {
   id: string;
   imageUrl: string;
+  thumbnailUrl?: string;
   guestName: string;
 };
+
 
 export default function GalleryPage() {
   const params = useParams();
@@ -214,9 +216,8 @@ return (
         className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
       >
         <img
-          src={photo.imageUrl}
+          src={photo.thumbnailUrl || photo.imageUrl}
           loading="lazy"
-          fetchPriority="low"
           alt=""
           className="w-full h-64 object-cover"
         />
