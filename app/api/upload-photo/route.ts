@@ -162,15 +162,17 @@ export async function POST(req: Request) {
     let imageUrl = sharedLinkData.url;
 
    imageUrl = imageUrl.replace(
-    "www.dropbox.com",
-    "dl.dropboxusercontent.com"
-    );
+  "www.dropbox.com",
+  "dl.dropboxusercontent.com"
+);
 
-    if (imageUrl.includes("?dl=0")) {
-      imageUrl = imageUrl.replace(
-        "?dl=0",
-        "?raw=1"
-      );
+    imageUrl = imageUrl.replace("?dl=0", "?raw=1");
+    imageUrl = imageUrl.replace("&dl=0", "&raw=1");
+
+    if (!imageUrl.includes("raw=1")) {
+      imageUrl += imageUrl.includes("?")
+        ? "&raw=1"
+        : "?raw=1";
     }
 
     imageUrl = imageUrl.replace("?dl=0", "");
