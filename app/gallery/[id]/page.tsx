@@ -216,6 +216,7 @@ return (
         <img
           src={photo.imageUrl}
           loading="lazy"
+          fetchPriority="low"
           alt=""
           className="w-full h-64 object-cover"
         />
