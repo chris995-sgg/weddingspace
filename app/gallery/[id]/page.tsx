@@ -38,12 +38,24 @@ export default function GalleryPage() {
   );
 
   useEffect(() => {
-    const q = query(
-      collection(db, "weddings", weddingId, "photos"),
-      orderBy("createdAt", "desc")
-    );
+  const q = query(
+    collection(db, "weddings", weddingId, "photos"),
+    orderBy("createdAt", "desc")
+  );
 
-    useEffect(() => {
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const photoList = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Photo[];
+
+    setPhotos(photoList);
+  });
+
+  return () => unsubscribe();
+  }, [weddingId]);
+
+  useEffect(() => {
   if (selectedPhoto) {
     document.body.style.overflow = "hidden";
   } else {
@@ -53,19 +65,7 @@ export default function GalleryPage() {
   return () => {
     document.body.style.overflow = "auto";
   };
-}, [selectedPhoto]);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const photoList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Photo[];
-
-      setPhotos(photoList);
-    });
-
-    return () => unsubscribe();
-  }, [weddingId]);
+  }, [selectedPhoto]);
 
   function showNextPhoto() {
     if (selectedIndex === -1) return;
