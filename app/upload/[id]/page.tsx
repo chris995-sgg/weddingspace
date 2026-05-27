@@ -14,6 +14,15 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
 
+ 
+  async function createThumbnail(file: File) {
+  return await imageCompression(file, {
+    maxSizeMB: 0.3,
+    maxWidthOrHeight: 500,
+    useWebWorker: true,
+  });
+}
+ 
   async function uploadSingleFile(file: File) {
     let uploadFile = file;
     const thumbnailFile =
@@ -59,13 +68,7 @@ if (!thumbnailUploadLinkResponse.ok) {
   );
 }
 
-    async function createThumbnail(file: File) {
-  return await imageCompression(file, {
-    maxSizeMB: 0.3,
-    maxWidthOrHeight: 500,
-    useWebWorker: true,
-  });
-}
+
 
     const uploadLinkResponse = await fetch("/api/create-upload-link", {
       method: "POST",
@@ -131,6 +134,8 @@ if (
         guestName,
         fileName: uploadLinkData.fileName,
         dropboxPath: uploadLinkData.dropboxPath,
+        thumbnailDropboxPath:
+         thumbnailUploadLinkData.dropboxPath,
         sizeBytes: uploadFile.size,
       }),
     });
