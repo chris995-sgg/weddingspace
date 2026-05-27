@@ -87,19 +87,19 @@ export default function UploadPage() {
     setUploadedCount(0);
 
     try {
-      const CONCURRENT_UPLOADS = 4;
+      const CONCURRENT_UPLOADS = 2;
 
-      //for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
-        //const batch = files.slice(i, i + CONCURRENT_UPLOADS);
+      for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
+        const batch = files.slice(i, i + CONCURRENT_UPLOADS);
 
-       // await Promise.all(
-        //  batch.map(async (file) => {
-          //  await uploadSingleFile(file);
-            //setUploadedCount((prev) => prev + 1);
-           // await new Promise((resolve) => setTimeout(resolve, 50));
-         // })
-       // );
-      //}
+        await Promise.all(
+         batch.map(async (file) => {
+           await uploadSingleFile(file);
+            setUploadedCount((prev) => prev + 1);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          })
+        );
+      }
 
       alert("Fotos erfolgreich hochgeladen!");
       setFiles([]);
