@@ -202,7 +202,7 @@ return (
 
       ) : (
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
 
 {photos.map((photo) => {
   const isSelected = selectedPhotoIds.includes(photo.id);
@@ -244,61 +244,53 @@ return (
     </div>
 
     {selectedPhoto && (
-      <div className="fixed inset-0 overflow-hidden bg-black/80 z-50 flex items-center justify-center p-4">
+  <div className="fixed inset-0 bg-black/85 z-50 overflow-hidden flex items-center justify-center px-4 pt-24 pb-28 md:py-8">
+    <button
+      onClick={showPreviousPhoto}
+      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
+    >
+      ←
+    </button>
 
-        <div className="max-w-6xl w-full relative">
+    <button
+      onClick={showNextPhoto}
+      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
+    >
+      →
+    </button>
 
-          <button
-            onClick={showPreviousPhoto}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
-          >
-            ←
-          </button>
+    <div className="w-full max-w-5xl flex flex-col items-center justify-center">
+      <div className="w-full flex justify-between items-center mb-4">
+        <p className="text-white text-sm">
+          Hochgeladen von {selectedPhoto.guestName}
+        </p>
 
-          <button
-            onClick={showNextPhoto}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
-          >
-            →
-          </button>
-
-          <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-6 border border-white/20">
-
-            <div className="flex justify-between items-center mb-4">
-
-              <p className="text-white">
-                Hochgeladen von {selectedPhoto.guestName}
-              </p>
-
-              <button
-                onClick={() => setSelectedPhoto(null)}
-                className="bg-white/80 backdrop-blur text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg border border-white/40 hover:bg-white transition"
-              >
-                Schließen
-              </button>
-
-            </div>
-
-            <img
-              src={selectedPhoto.imageUrl}
-              alt=""
-              className="max-h-[85vh] max-w-[90vw] object-contain rounded-3xl shadow-2xl"
-            />
-
-            <a
-              href={selectedPhoto.imageUrl}
-              download
-              target="_blank"
-              className="block mt-4 text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
-            >
-              Foto herunterladen
-            </a>
-
-          </div>
-
-        </div>
+        <button
+          onClick={() => setSelectedPhoto(null)}
+          className="bg-white/90 text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg"
+        >
+          Schließen
+        </button>
       </div>
-    )}
+
+      <img
+        src={selectedPhoto.imageUrl}
+        alt=""
+        className="max-w-full max-h-[62vh] md:max-h-[78vh] object-contain rounded-[1.5rem] shadow-2xl"
+      />
+
+      <a
+        href={selectedPhoto.imageUrl}
+        download
+        target="_blank"
+        className="mt-4 w-full max-w-md text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+      >
+        Foto herunterladen
+      </a>
+    </div>
+  </div>
+)}
+   
   </main>
 );
 }
