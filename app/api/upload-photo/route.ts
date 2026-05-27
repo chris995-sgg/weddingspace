@@ -159,31 +159,23 @@ export async function POST(req: Request) {
       );
     }
 
-    let imageUrl = sharedLinkData.url;
+let imageUrl = sharedLinkData.url;
 
-   imageUrl = imageUrl.replace(
+imageUrl = imageUrl.replace(
   "www.dropbox.com",
   "dl.dropboxusercontent.com"
 );
 
-    imageUrl = imageUrl.replace("?dl=0", "?raw=1");
-    imageUrl = imageUrl.replace("&dl=0", "&raw=1");
+imageUrl = imageUrl.replace("?dl=0", "?raw=1");
+imageUrl = imageUrl.replace("&dl=0", "&raw=1");
 
-    if (!imageUrl.includes("raw=1")) {
-      imageUrl += imageUrl.includes("?")
-        ? "&raw=1"
-        : "?raw=1";
-    }
-
-    imageUrl = imageUrl.replace("?dl=0", "");
-
-    await addDoc(collection(db, "weddings", weddingId, "photos"), {
-      guestName: guestName || "Gast",
-      fileName,
-      imageUrl,
-      sizeBytes: fileSize,
-      createdAt: new Date(),
-    });
+await addDoc(collection(db, "weddings", weddingId, "photos"), {
+  guestName: guestName || "Gast",
+  fileName,
+  imageUrl,
+  sizeBytes: fileSize,
+  createdAt: new Date(),
+});
 
     return Response.json({
       success: true,
