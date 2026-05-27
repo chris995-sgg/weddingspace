@@ -43,6 +43,18 @@ export default function GalleryPage() {
       orderBy("createdAt", "desc")
     );
 
+    useEffect(() => {
+  if (selectedPhoto) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [selectedPhoto]);
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const photoList = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -91,39 +103,37 @@ async function downloadSelectedPhotos() {
   setDownloading(true);
 
   try {
-    const zip = new JSZip();
-
     const selectedPhotos = photos.filter((photo) =>
       selectedPhotoIds.includes(photo.id)
     );
 
-    for (const photo of selectedPhotos) {
-      const response = await fetch(photo.imageUrl);
-      const blob = await response.blob();
+    const response = await fetch("/api/download-photos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        photos: selectedPhotos,
+      }),
+    });
 
-      zip.file(`${photo.guestName}-${photo.id}.jpg`, blob);
+    if (!response.ok) {
+      throw new Error("Download fehlgeschlagen.");
     }
 
-    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
 
-    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "weddingspace-fotos.zip";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-const isIOS =
-  /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-if (isIOS) {
-  window.open(url, "_blank");
-} else {
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "weddingspace-fotos.zip";
-  link.click();
-}
-
-setTimeout(() => {
-  URL.revokeObjectURL(url);
-}, 5000);
-
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 5000);
   } catch (error) {
     console.error(error);
     alert("Download fehlgeschlagen.");
@@ -133,7 +143,7 @@ setTimeout(() => {
 }
 
 return (
-  <main className="min-h-screen pt-24 p-6 relative text-[#3b3128]">
+  <main className="min-h-screen pt-24 p-6 relative text-[#3b3128] overflow-x-hidden">
 
     <div className="max-w-7xl mx-auto">
 
@@ -144,7 +154,7 @@ return (
          ← Zurück zum Dashboard
          </Link>
 
-      <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-6 shadow-2xl border border-white/50 mb-8">
+      <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-4 md:p-6 border border-white/20 mt-16 md:mt-0">
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 
@@ -201,7 +211,7 @@ return (
     <div key={photo.id} className="relative">
       <button
         onClick={() => setSelectedPhoto(photo)}
-        className="w-full overflow-hidden rounded-[1.5rem] shadow-xl hover:scale-[1.02] transition bg-transparent"
+        className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
       >
         <img
           src={photo.imageUrl}
@@ -234,7 +244,7 @@ return (
     </div>
 
     {selectedPhoto && (
-      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 overflow-hidden bg-black/80 z-50 flex items-center justify-center p-4">
 
         <div className="max-w-6xl w-full relative">
 
