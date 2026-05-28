@@ -43,19 +43,30 @@ export default function GalleryPage() {
   let cancelled = false;
 
   async function preloadBatch(urls: string[]) {
-    await Promise.all(
-      urls.map(
-        (url) =>
-          new Promise<void>((resolve) => {
-            const img = new Image();
+await Promise.all(
+  urls.map(
+    (url) =>
+      new Promise<void>((resolve) => {
+        const img = new Image();
 
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
+        const timeout = setTimeout(() => {
+          resolve();
+        }, 3000);
 
-            img.src = url;
-          })
-      )
-    );
+        img.onload = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+
+        img.onerror = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+
+        img.src = url;
+      })
+  )
+);
   }
 
   async function loadImagesInBatches() {
