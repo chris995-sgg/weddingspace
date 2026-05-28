@@ -42,41 +42,83 @@ export default function GalleryPage() {
 
   let cancelled = false;
 
-  async function preloadBatch(urls: string[]) {
-await Promise.all(
-  urls.map(
-    (url) =>
-      new Promise<void>((resolve) => {
-        const img = new Image();
+async function preloadBatch(urls: string[]) {
+  let failedUrls = urls;
 
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 3000);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const results = await Promise.all(
+      failedUrls.map(
+        (url) =>
+          new Promise<{ url: string; ok: boolean }>((resolve) => {
+            const img = new Image();
 
-        img.onload = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
+            const timeout = setTimeout(() => {
+              resolve({ url, ok: false });
+            }, 3000);
 
-        img.onerror = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
+            img.onload = () => {
+              clearTimeout(timeout);
+              resolve({ url, ok: true });
+            };
 
-        img.src = url;
-      })
-  )
-);
+            img.onerror = () => {
+              clearTimeout(timeout);
+              resolve({ url, ok: false });
+            };
+
+            img.src = url;
+          })
+      )
+    );
+
+    failedUrls = results
+      .filter((result) => !result.ok)
+      .map((result) => result.url);
+
+    if (failedUrls.length === 0) break;
   }
+
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+}
+
+async function preloadSingleOriginal(url: string) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const success = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+
+      const timeout = setTimeout(() => {
+        resolve(false);
+      }, 5000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve(true);
+      };
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve(false);
+      };
+
+      img.src = url;
+    });
+
+    if (success) return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+}
+  
+
 
   async function loadImagesInBatches() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 5) {
+    for (let i = 0; i < photos.length; i += 3){
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 5);
+      const batch = photos.slice(i, i + 3);
 
       await preloadBatch(
         batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
@@ -89,17 +131,14 @@ await Promise.all(
       );
     }
 
-    for (let i = 0; i < photos.length; i += 5) {
-      if (cancelled) return;
+for (const photo of photos) {
+  if (cancelled) return;
 
-      const batch = photos.slice(i, i + 5);
+  await preloadSingleOriginal(photo.imageUrl);
 
-      await preloadBatch(batch.map((photo) => photo.imageUrl));
-    }
+  await new Promise((resolve) => setTimeout(resolve, 500));
+}
 
-    if (!cancelled) {
-      setPreloadedOriginals(true);
-    }
   }
 
   loadImagesInBatches();
