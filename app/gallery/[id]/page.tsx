@@ -55,7 +55,7 @@ async function preloadBatch(urls: string[]) {
 
             const timeout = setTimeout(() => {
               resolve({ url, ok: false });
-            }, 3000);
+            }, 2000);
 
             img.onload = () => {
               clearTimeout(timeout);
@@ -89,7 +89,7 @@ if (attempt < 3 && failedUrls.length > 0) {
   );
 }
 
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 }
 }
 
@@ -100,7 +100,7 @@ async function preloadSingleOriginal(url: string) {
 
       const timeout = setTimeout(() => {
         resolve(false);
-      }, 4000);
+      }, 3000);
 
       img.onload = () => {
         clearTimeout(timeout);
@@ -119,7 +119,7 @@ async function preloadSingleOriginal(url: string) {
 
     if (!success && attempt < 5) {
   await new Promise((resolve) =>
-    setTimeout(resolve, 200)
+    setTimeout(resolve, 100)
   );
   }
 }
@@ -130,10 +130,10 @@ async function preloadSingleOriginal(url: string) {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 3){
+    for (let i = 0; i < photos.length; i += 1){
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 3);
+      const batch = photos.slice(i, i + 1);
 
       await preloadBatch(
         batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
@@ -151,7 +151,7 @@ for (const photo of photos) {
 
   await preloadSingleOriginal(photo.imageUrl);
 
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
   }
