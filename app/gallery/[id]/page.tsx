@@ -41,11 +41,12 @@ export default function GalleryPage() {
   if (photos.length === 0) return;
 
   let cancelled = false;
+  
 
 async function preloadBatch(urls: string[]) {
   let failedUrls = urls;
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 5;attempt++) {
     const results = await Promise.all(
       failedUrls.map(
         (url) =>
@@ -54,7 +55,7 @@ async function preloadBatch(urls: string[]) {
 
             const timeout = setTimeout(() => {
               resolve({ url, ok: false });
-            }, 3000);
+            }, 2000);
 
             img.onload = () => {
               clearTimeout(timeout);
@@ -67,28 +68,39 @@ async function preloadBatch(urls: string[]) {
             };
 
             img.src = url;
-          })
+      })
+        
       )
+    
     );
+  
 
-    failedUrls = results
-      .filter((result) => !result.ok)
-      .map((result) => result.url);
+failedUrls = results
+  .filter((result) => !result.ok)
+  .map((result) => result.url);
 
-    if (failedUrls.length === 0) break;
-  }
+if (failedUrls.length === 0) {
+  break;
+}
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+if (attempt < 3 && failedUrls.length > 0) {
+  await new Promise((resolve) =>
+    setTimeout(resolve, 200)
+  );
+}
+
+  await new Promise((resolve) => setTimeout(resolve, 100));
+}
 }
 
 async function preloadSingleOriginal(url: string) {
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     const success = await new Promise<boolean>((resolve) => {
       const img = new Image();
 
       const timeout = setTimeout(() => {
         resolve(false);
-      }, 5000);
+      }, 3000);
 
       img.onload = () => {
         clearTimeout(timeout);
@@ -104,21 +116,24 @@ async function preloadSingleOriginal(url: string) {
     });
 
     if (success) return;
-  }
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (!success && attempt < 5) {
+  await new Promise((resolve) =>
+    setTimeout(resolve, 200)
+  );
+  }
+}
 }
   
-
 
   async function loadImagesInBatches() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 3){
+    for (let i = 0; i < photos.length; i += 5){
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 3);
+      const batch = photos.slice(i, i + 5);
 
       await preloadBatch(
         batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
@@ -136,7 +151,7 @@ for (const photo of photos) {
 
   await preloadSingleOriginal(photo.imageUrl);
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
   }
