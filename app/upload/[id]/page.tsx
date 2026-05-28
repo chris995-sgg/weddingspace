@@ -79,31 +79,29 @@ export default function UploadPage() {
     );
   }
 
-  await Promise.all([
-    fetch(uploadLinkData.uploadLink, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-      body: uploadFile,
-    }),
+ const originalResponse = await fetch(uploadLinkData.uploadLink, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/octet-stream",
+  },
+  body: uploadFile,
+});
 
-    fetch(thumbnailUploadLinkData.uploadLink, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-      body: thumbnailFile,
-    }),
-  ]).then(([originalResponse, thumbnailResponse]) => {
-    if (!originalResponse.ok) {
-      throw new Error("Dropbox Upload fehlgeschlagen");
-    }
+if (!originalResponse.ok) {
+  throw new Error("Dropbox Upload fehlgeschlagen");
+}
 
-    if (!thumbnailResponse.ok) {
-      throw new Error("Thumbnail Upload fehlgeschlagen");
-    }
-  });
+const thumbnailResponse = await fetch(thumbnailUploadLinkData.uploadLink, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/octet-stream",
+  },
+  body: thumbnailFile,
+});
+
+if (!thumbnailResponse.ok) {
+  throw new Error("Thumbnail Upload fehlgeschlagen");
+}
 
   const completeResponse = await fetch("/api/complete-upload", {
     method: "POST",
