@@ -215,12 +215,23 @@ return (
         onClick={() => setSelectedPhoto(photo)}
         className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
       >
-        <img
-          src={photo.thumbnailUrl || photo.imageUrl}
-          loading="lazy"
-          alt=""
-          className="w-full h-64 object-cover"
-        />
+      <img
+      src={photo.thumbnailUrl || photo.imageUrl}
+      loading="eager"
+      decoding="async"
+      alt=""
+      onError={(e) => {
+        const img = e.currentTarget;
+
+        if (
+          photo.thumbnailUrl &&
+          img.src === photo.thumbnailUrl
+        ) {
+          img.src = photo.imageUrl;
+        }
+      }}
+      className="w-full h-64 object-cover"
+    />
       </button>
 
       <button
