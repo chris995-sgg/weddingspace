@@ -26,38 +26,85 @@ export default function GalleryPage() {
   const params = useParams();
 
   const weddingId = params.id as string;
-  const [visibleCount, setVisibleCount] = useState(10);
-
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [preloadedOriginals, setPreloadedOriginals] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
-
   const [selectedPhoto, setSelectedPhoto] =
     useState<Photo | null>(null);
-
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
-
   const selectedIndex = photos.findIndex(
     (photo) => photo.id === selectedPhoto?.id
   );
 
-   useEffect(() => {
-    if (visibleCount >= photos.length) return;
+  useEffect(() => {
+  if (photos.length === 0) return;
 
-    const timer = setTimeout(() => {
-      setVisibleCount((prev) =>
-        Math.min(prev + 10, photos.length)
+  let cancelled = false;
+
+  async function preloadBatch(urls: string[]) {
+    await Promise.all(
+      urls.map(
+        (url) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+
+            img.src = url;
+          })
+      )
+    );
+  }
+
+  async function loadImagesInBatches() {
+    setVisibleCount(0);
+    setPreloadedOriginals(false);
+
+    for (let i = 0; i < photos.length; i += 5) {
+      if (cancelled) return;
+
+      const batch = photos.slice(i, i + 5);
+
+      await preloadBatch(
+        batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
       );
-    }, 1000);
 
-    return () => clearTimeout(timer);
-  }, [visibleCount, photos.length]);
+      if (cancelled) return;
 
-useEffect(() => {
+      setVisibleCount((prev) =>
+        Math.min(prev + batch.length, photos.length)
+      );
+    }
+
+    for (let i = 0; i < photos.length; i += 5) {
+      if (cancelled) return;
+
+      const batch = photos.slice(i, i + 5);
+
+      await preloadBatch(batch.map((photo) => photo.imageUrl));
+    }
+
+    if (!cancelled) {
+      setPreloadedOriginals(true);
+    }
+  }
+
+  loadImagesInBatches();
+
+  return () => {
+    cancelled = true;
+  };
+}, [photos]);
+
+  useEffect(() => {
   const q = query(
     collection(db, "weddings", weddingId, "photos"),
     orderBy("createdAt", "desc")
   );
 
+  
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const photoList = snapshot.docs.map((doc) => ({
       id: doc.id,
