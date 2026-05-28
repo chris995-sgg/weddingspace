@@ -33,77 +33,83 @@ export default function UploadPage() {
     });
   }
 
-  const thumbnailFile = await createThumbnail(file);
+  const shouldCreateThumbnail =
+    uploadFile.size > 1 * 1024 * 1024;
 
-  const [uploadLinkResponse, thumbnailUploadLinkResponse] =
-    await Promise.all([
-      fetch("/api/create-upload-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          weddingId,
-          fileName: uploadFile.name,
-          sizeBytes: uploadFile.size,
-        }),
-      }),
+  const thumbnailFile = shouldCreateThumbnail
+    ? await createThumbnail(file)
+    : null;
 
-      fetch("/api/create-upload-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          weddingId,
-          fileName: "thumb-" + uploadFile.name,
-          sizeBytes: thumbnailFile.size,
-        }),
-      }),
-    ]);
+  const uploadLinkResponse = await fetch("/api/create-upload-link", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      weddingId,
+      fileName: uploadFile.name,
+      sizeBytes: uploadFile.size,
+    }),
+  });
 
   const uploadLinkData = await uploadLinkResponse.json();
-  const thumbnailUploadLinkData =
-    await thumbnailUploadLinkResponse.json();
 
   if (!uploadLinkResponse.ok) {
-    throw new Error(
-      uploadLinkData.error || "Upload-Link Fehler"
-    );
+    throw new Error(uploadLinkData.error || "Upload-Link Fehler");
   }
 
-  if (!thumbnailUploadLinkResponse.ok) {
-    throw new Error(
-      thumbnailUploadLinkData.error ||
-        "Thumbnail Upload-Link Fehler"
-    );
-  }
+  let thumbnailUploadLinkData: any = null;
 
-  await Promise.all([
-    fetch(uploadLinkData.uploadLink, {
+  if (thumbnailFile) {
+    const thumbnailUploadLinkResponse = await fetch("/api/create-upload-link", {
       method: "POST",
       headers: {
-        "Content-Type": "application/octet-stream",
+        "Content-Type": "application/json",
       },
-      body: uploadFile,
-    }),
+      body: JSON.stringify({
+        weddingId,
+        fileName: "thumb-" + uploadFile.name,
+        sizeBytes: thumbnailFile.size,
+      }),
+    });
 
-    fetch(thumbnailUploadLinkData.uploadLink, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-      body: thumbnailFile,
-    }),
-  ]).then(([originalResponse, thumbnailResponse]) => {
-    if (!originalResponse.ok) {
-      throw new Error("Dropbox Upload fehlgeschlagen");
+    thumbnailUploadLinkData = await thumbnailUploadLinkResponse.json();
+
+    if (!thumbnailUploadLinkResponse.ok) {
+      throw new Error(
+        thumbnailUploadLinkData.error || "Thumbnail Upload-Link Fehler"
+      );
     }
+  }
+
+  const originalResponse = await fetch(uploadLinkData.uploadLink, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+    },
+    body: uploadFile,
+  });
+
+  if (!originalResponse.ok) {
+    throw new Error("Dropbox Upload fehlgeschlagen");
+  }
+
+  if (thumbnailFile && thumbnailUploadLinkData) {
+    const thumbnailResponse = await fetch(
+      thumbnailUploadLinkData.uploadLink,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
+        body: thumbnailFile,
+      }
+    );
 
     if (!thumbnailResponse.ok) {
       throw new Error("Thumbnail Upload fehlgeschlagen");
     }
-  });
+  }
 
   const completeResponse = await fetch("/api/complete-upload", {
     method: "POST",
@@ -116,7 +122,7 @@ export default function UploadPage() {
       fileName: uploadLinkData.fileName,
       dropboxPath: uploadLinkData.dropboxPath,
       thumbnailDropboxPath:
-        thumbnailUploadLinkData.dropboxPath,
+        thumbnailUploadLinkData?.dropboxPath || null,
       sizeBytes: uploadFile.size,
     }),
   });
