@@ -17,7 +17,7 @@ export default function UploadPage() {
  
   async function createThumbnail(file: File) {
   return await imageCompression(file, {
-    maxSizeMB: 0.3,
+    maxSizeMB: 0.1,
     maxWidthOrHeight: 500,
     useWebWorker: true,
   });
@@ -138,7 +138,7 @@ if (!thumbnailResponse.ok) {
     setUploadedCount(0);
 
     try {
-      const CONCURRENT_UPLOADS = 3;
+      const CONCURRENT_UPLOADS = 4
 
       for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
         const batch = files.slice(i, i + CONCURRENT_UPLOADS);

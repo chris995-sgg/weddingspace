@@ -26,6 +26,7 @@ export default function GalleryPage() {
   const params = useParams();
 
   const weddingId = params.id as string;
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
 
@@ -44,6 +45,18 @@ export default function GalleryPage() {
     collection(db, "weddings", weddingId, "photos"),
     orderBy("createdAt", "desc")
   );
+
+  useEffect(() => {
+  if (visibleCount >= photos.length) return;
+
+  const timer = setTimeout(() => {
+    setVisibleCount((prev) =>
+      Math.min(prev + 10, photos.length)
+    );
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [visibleCount, photos.length]);
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const photoList = snapshot.docs.map((doc) => ({
@@ -206,7 +219,7 @@ return (
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
 
-{photos.map((photo) => {
+{photos.slice(0, visibleCount).map((photo) => {
   const isSelected = selectedPhotoIds.includes(photo.id);
 
   return (
