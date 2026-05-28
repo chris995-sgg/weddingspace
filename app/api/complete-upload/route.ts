@@ -253,25 +253,27 @@ thumbnailUrl =
     // ==========================================
     // FOTO IN FIRESTORE SPEICHERN
     // ==========================================
-    await addDoc(
-      collection(
-        db,
-        "weddings",
-        safeWeddingId,
-        "photos"
-      ),
-      {
-        guestName:
-          guestName || "Gast",
-        fileName,
-       imageUrl,
-       thumbnailUrl,
-       dropboxPath,
-       thumbnailDropboxPath,
-        sizeBytes: fileSize,
-        createdAt: new Date(),
-      }
-    );
+await addDoc(
+  collection(
+    db,
+    "weddings",
+    safeWeddingId,
+    "photos"
+  ),
+  {
+    guestName: guestName || "Gast",
+    fileName,
+
+    imageUrl,
+    thumbnailUrl,
+
+    dropboxPath,
+    thumbnailDropboxPath,
+
+    sizeBytes: fileSize,
+    createdAt: new Date(),
+  }
+);
 
     // ==========================================
     // UPLOADEDBYTES ERHÖHEN
