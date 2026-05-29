@@ -146,7 +146,7 @@ attempts.push({
     }
 
     if (attempt < 5) {
-      await wait(50);
+      await wait(5);
     }
   }
 
