@@ -36,6 +36,15 @@ export default function GalleryPage() {
   const selectedIndex = photos.findIndex(
     (photo) => photo.id === selectedPhoto?.id
   );
+const [loadReport, setLoadReport] = useState<
+  {
+    index: number;
+    url: string;
+    attempts: number;
+    reason: string;
+  }[]
+>([]);
+
 
 useEffect(() => {
   if (photos.length === 0) return;
@@ -46,44 +55,80 @@ useEffect(() => {
     new Promise((resolve) => setTimeout(resolve, ms));
 
   async function preloadWithRetries(url: string) {
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      if (cancelled) return false;
+    let lastReason = "";
 
-      const success = await new Promise<boolean>((resolve) => {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      if (cancelled) {
+        return { ok: false, attempts: attempt, reason: "Abgebrochen" };
+      }
+
+      const result = await new Promise<{
+        ok: boolean;
+        reason: string;
+      }>((resolve) => {
         const img = new Image();
 
         img.decoding = "async";
 
         const timeout = setTimeout(() => {
-          resolve(false);
+          resolve({
+            ok: false,
+            reason: "Timeout nach 200ms",
+          });
         }, 200);
 
         img.onload = () => {
           clearTimeout(timeout);
-          resolve(true);
+          resolve({
+            ok: true,
+            reason: "Erfolgreich geladen",
+          });
         };
 
         img.onerror = () => {
           clearTimeout(timeout);
-          resolve(false);
+          resolve({
+            ok: false,
+            reason: "Fehler beim Laden",
+          });
         };
 
         img.src = url;
       });
 
-      if (success) return true;
+      lastReason = result.reason;
+
+      if (result.ok) {
+        return {
+          ok: true,
+          attempts: attempt,
+          reason: result.reason,
+        };
+      }
 
       if (attempt < 5) {
         await wait(50);
       }
     }
 
-    return false;
+    return {
+      ok: false,
+      attempts: 5,
+      reason: lastReason,
+    };
   }
 
   async function loadImagesLazyStyle() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
+    setLoadReport([]);
+
+    const report: {
+      index: number;
+      url: string;
+      attempts: number;
+      reason: string;
+    }[] = [];
 
     for (let i = 0; i < photos.length; i++) {
       if (cancelled) return;
@@ -91,7 +136,14 @@ useEffect(() => {
       const photo = photos[i];
       const url = photo.thumbnailUrl || photo.imageUrl;
 
-      await preloadWithRetries(url);
+      const result = await preloadWithRetries(url);
+
+      report.push({
+        index: i + 1,
+        url,
+        attempts: result.attempts,
+        reason: result.reason,
+      });
 
       if (cancelled) return;
 
@@ -100,6 +152,10 @@ useEffect(() => {
       );
 
       await wait(10);
+    }
+
+    if (!cancelled) {
+      setLoadReport(report);
     }
   }
 
@@ -217,6 +273,8 @@ async function downloadSelectedPhotos() {
 }
 
 return (
+
+
   <main className="min-h-screen pt-24 p-6 relative text-[#3b3128] overflow-x-hidden">
 
     <div className="max-w-7xl mx-auto">
@@ -305,6 +363,7 @@ return (
   className="w-full h-64 object-cover"
 
 
+
     />
       </button>
 
@@ -378,6 +437,42 @@ return (
   </div>
 )}
    
+
+
+  {loadReport.length > 0 && (
+  <div className="fixed bottom-6 right-6 z-50 max-w-md max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
+    <h2 className="font-bold text-lg mb-3">
+      Ladebericht
+    </h2>
+
+    <div className="space-y-3">
+      {loadReport.map((item) => (
+        <div
+          key={`${item.index}-${item.url}`}
+          className="border-b border-[#ddd] pb-2"
+        >
+          <p className="font-semibold">
+            Bild {item.index}
+          </p>
+
+          <p>
+            Versuche: {item.attempts}
+          </p>
+
+          <p>
+            Ergebnis: {item.reason}
+          </p>
+
+          <p className="text-xs break-all opacity-70">
+            {item.url}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
   </main>
 );
 }
