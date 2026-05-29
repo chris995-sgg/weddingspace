@@ -93,6 +93,7 @@ const result = await new Promise<{
   const img = new Image();
 
   img.decoding = "async";
+  
 
   const timeout = setTimeout(() => {
     resolve({
