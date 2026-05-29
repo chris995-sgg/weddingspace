@@ -42,7 +42,10 @@ useEffect(() => {
 
   let cancelled = false;
 
-  async function preloadOnce(url: string, timeoutMs = 2000) {
+  const wait = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  async function preloadOnce(url: string, timeoutMs = 500) {
     return new Promise<{ url: string; ok: boolean }>((resolve) => {
       const img = new Image();
 
@@ -66,76 +69,94 @@ useEffect(() => {
     });
   }
 
-  async function preloadBatch(urls: string[]) {
-    const results = await Promise.all(
-      urls.map((url) => preloadOnce(url))
-    );
+  async function retryFailedImages(
+    urls: string[],
+    timeoutMs: number
+  ) {
+    let failedUrls = urls;
 
-    return results
-      .filter((result) => !result.ok)
-      .map((result) => result.url);
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      if (cancelled || failedUrls.length === 0) return;
+
+      const stillFailed: string[] = [];
+
+      for (const url of failedUrls) {
+        if (cancelled) return;
+
+        const result = await preloadOnce(url, timeoutMs);
+
+        if (!result.ok) {
+          stillFailed.push(url);
+        }
+
+        await wait(10);
+      }
+
+      failedUrls = stillFailed;
+    }
   }
 
-  async function loadImagesInBatches() {
+  async function loadImagesInOrder() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
     const failedThumbnailUrls: string[] = [];
     const failedOriginalUrls: string[] = [];
 
-    for (let i = 0; i < photos.length; i += 4) {
+    // 1. Vorschaubilder von oben nach unten laden
+    for (let i = 0; i < photos.length; i++) {
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 4);
+      const photo = photos[i];
+      const url = photo.thumbnailUrl || photo.imageUrl;
 
-      const urls = batch.map(
-        (photo) => photo.thumbnailUrl || photo.imageUrl
-      );
+      const result = await preloadOnce(url, 500);
 
-      const failed = await preloadBatch(urls);
-
-      failedThumbnailUrls.push(...failed);
+      if (!result.ok) {
+        failedThumbnailUrls.push(url);
+      }
 
       if (cancelled) return;
 
       setVisibleCount((prev) =>
-        Math.min(prev + batch.length, photos.length)
+        Math.min(prev + 1, photos.length)
       );
+
+      await wait(10);
     }
 
-    if (failedThumbnailUrls.length > 0) {
-      await preloadBatch(failedThumbnailUrls);
-    }
+    // 2. Fehlgeschlagene Vorschaubilder unten nochmal versuchen
+    await retryFailedImages(failedThumbnailUrls, 500);
 
+    if (cancelled) return;
+
+    // 3. Originalbilder genauso laden
     for (const photo of photos) {
       if (cancelled) return;
 
-      const result = await preloadOnce(photo.imageUrl, 3000);
+      const result = await preloadOnce(photo.imageUrl, 500);
 
       if (!result.ok) {
-        failedOriginalUrls.push(result.url);
+        failedOriginalUrls.push(photo.imageUrl);
       }
+
+      await wait(10);
     }
 
-    for (const url of failedOriginalUrls) {
-      if (cancelled) return;
-
-      await preloadOnce(url, 3000);
-    }
+    // 4. Fehlgeschlagene Originalbilder nochmal 5x versuchen
+    await retryFailedImages(failedOriginalUrls, 500);
 
     if (!cancelled) {
       setPreloadedOriginals(true);
     }
   }
 
-  loadImagesInBatches();
+  loadImagesInOrder();
 
   return () => {
     cancelled = true;
   };
 }, [photos]);
-
-
   useEffect(() => {
   const q = query(
     collection(db, "weddings", weddingId, "photos"),
