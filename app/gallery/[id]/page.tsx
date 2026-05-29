@@ -130,10 +130,10 @@ async function preloadSingleOriginal(url: string) {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 4){
+    for (let i = 0; i < photos.length; i += 6){
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 4);
+      const batch = photos.slice(i, i + 6);
 
       await preloadBatch(
         batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
