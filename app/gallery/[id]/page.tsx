@@ -93,14 +93,14 @@ const result = await new Promise<{
   const img = new Image();
 
   img.decoding = "async";
-  
+
 
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 1200ms",
+      reason: "Timeout nach 2000ms",
     });
-  }, 1200);
+  }, 2000);
 
   img.onload = () => {
     clearTimeout(timeout);
