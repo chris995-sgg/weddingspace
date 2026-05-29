@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import JSZip from "jszip";
 import { db } from "@/lib/firebase";
 
 import {
@@ -98,9 +97,9 @@ const result = await new Promise<{
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 1000ms",
+      reason: "Timeout nach 400ms",
     });
-  }, 1000);
+  }, 400);
 
   img.onload = () => {
     clearTimeout(timeout);
@@ -147,7 +146,7 @@ attempts.push({
     }
 
     if (attempt < 5) {
-      await wait(50);
+      await wait(20);
     }
   }
 
