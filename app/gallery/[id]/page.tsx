@@ -98,9 +98,9 @@ const result = await new Promise<{
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 100ms",
+      reason: "Timeout nach 20ms",
     });
-  }, 100);
+  }, 20);
 
   img.onload = () => {
     clearTimeout(timeout);
@@ -146,7 +146,7 @@ attempts.push({
       };
     }
 
-    if (attempt < 5) {
+    if (attempt < 50) {
       await wait(10);
     }
   }
