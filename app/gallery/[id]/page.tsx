@@ -37,107 +37,64 @@ export default function GalleryPage() {
     (photo) => photo.id === selectedPhoto?.id
   );
 
-  useEffect(() => {
+useEffect(() => {
   if (photos.length === 0) return;
 
   let cancelled = false;
-  
 
-async function preloadBatch(urls: string[]) {
-  let failedUrls = urls;
-
-  for (let attempt = 1; attempt <= 5;attempt++) {
-    const results = await Promise.all(
-      failedUrls.map(
-        (url) =>
-          new Promise<{ url: string; ok: boolean }>((resolve) => {
-            const img = new Image();
-
-            const timeout = setTimeout(() => {
-              resolve({ url, ok: false });
-            }, 2000);
-
-            img.onload = () => {
-              clearTimeout(timeout);
-              resolve({ url, ok: true });
-            };
-
-            img.onerror = () => {
-              clearTimeout(timeout);
-              resolve({ url, ok: false });
-            };
-
-            img.src = url;
-      })
-        
-      )
-    
-    );
-  
-
-failedUrls = results
-  .filter((result) => !result.ok)
-  .map((result) => result.url);
-
-if (failedUrls.length === 0) {
-  break;
-}
-
-if (attempt < 3 && failedUrls.length > 0) {
-  await new Promise((resolve) =>
-    setTimeout(resolve, 100)
-  );
-}
-
-  await new Promise((resolve) => setTimeout(resolve, 10));
-}
-}
-
-async function preloadSingleOriginal(url: string) {
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    const success = await new Promise<boolean>((resolve) => {
+  async function preloadOnce(url: string, timeoutMs = 2000) {
+    return new Promise<{ url: string; ok: boolean }>((resolve) => {
       const img = new Image();
 
+      img.decoding = "async";
+
       const timeout = setTimeout(() => {
-        resolve(false);
-      }, 3000);
+        resolve({ url, ok: false });
+      }, timeoutMs);
 
       img.onload = () => {
         clearTimeout(timeout);
-        resolve(true);
+        resolve({ url, ok: true });
       };
 
       img.onerror = () => {
         clearTimeout(timeout);
-        resolve(false);
+        resolve({ url, ok: false });
       };
 
       img.src = url;
     });
-
-    if (success) return;
-
-    if (!success && attempt < 5) {
-  await new Promise((resolve) =>
-    setTimeout(resolve, 100)
-  );
   }
-}
-}
-  
+
+  async function preloadBatch(urls: string[]) {
+    const results = await Promise.all(
+      urls.map((url) => preloadOnce(url))
+    );
+
+    return results
+      .filter((result) => !result.ok)
+      .map((result) => result.url);
+  }
 
   async function loadImagesInBatches() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 4){
+    const failedThumbnailUrls: string[] = [];
+    const failedOriginalUrls: string[] = [];
+
+    for (let i = 0; i < photos.length; i += 4) {
       if (cancelled) return;
 
       const batch = photos.slice(i, i + 4);
 
-      await preloadBatch(
-        batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
+      const urls = batch.map(
+        (photo) => photo.thumbnailUrl || photo.imageUrl
       );
+
+      const failed = await preloadBatch(urls);
+
+      failedThumbnailUrls.push(...failed);
 
       if (cancelled) return;
 
@@ -146,14 +103,29 @@ async function preloadSingleOriginal(url: string) {
       );
     }
 
-for (const photo of photos) {
-  if (cancelled) return;
+    if (failedThumbnailUrls.length > 0) {
+      await preloadBatch(failedThumbnailUrls);
+    }
 
-  await preloadSingleOriginal(photo.imageUrl);
+    for (const photo of photos) {
+      if (cancelled) return;
 
-  await new Promise((resolve) => setTimeout(resolve, 10));
-}
+      const result = await preloadOnce(photo.imageUrl, 3000);
 
+      if (!result.ok) {
+        failedOriginalUrls.push(result.url);
+      }
+    }
+
+    for (const url of failedOriginalUrls) {
+      if (cancelled) return;
+
+      await preloadOnce(url, 3000);
+    }
+
+    if (!cancelled) {
+      setPreloadedOriginals(true);
+    }
   }
 
   loadImagesInBatches();
@@ -162,6 +134,7 @@ for (const photo of photos) {
     cancelled = true;
   };
 }, [photos]);
+
 
   useEffect(() => {
   const q = query(
