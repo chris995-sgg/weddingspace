@@ -75,7 +75,7 @@ const attempts: {
 
 
 
- for (let attempt = 1; attempt <= 50; attempt++) {
+ for (let attempt = 1; attempt <= 20; attempt++) {
   const startMs = performance.now();
 
   const startedAt = new Date().toLocaleTimeString("de-DE", {
@@ -98,9 +98,9 @@ const result = await new Promise<{
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 160ms",
+      reason: "Timeout nach 1200ms",
     });
-  }, 1600);
+  }, 1200);
 
   img.onload = () => {
     clearTimeout(timeout);
@@ -146,7 +146,7 @@ attempts.push({
       };
     }
 
-    if (attempt < 10) {
+    if (attempt < 20) {
       await wait(10);
     }
   }
