@@ -37,7 +37,7 @@ export default function GalleryPage() {
     (photo) => photo.id === selectedPhoto?.id
   );
 
-  
+
 const [loadReport, setLoadReport] = useState<
   {
     index: number;
@@ -51,8 +51,9 @@ const [loadReport, setLoadReport] = useState<
     }[];
   }[]
 
+ >([]);
+
   
->([]);
 
 
 useEffect(() => {
@@ -64,93 +65,123 @@ useEffect(() => {
     new Promise((resolve) => setTimeout(resolve, ms));
 
   async function preloadWithRetries(url: string) {
-    const attempts: {
-      attempt: number;
-      startedAt: string;
-      endedAt: string;
+  const attempts: {
+    attempt: number;
+    startedAt: string;
+    endedAt: string;
+    reason: string;
+  }[] = [];
+
+  const startMs = performance.now();
+
+// Ladeversuch
+
+const endMs = performance.now();
+
+const durationMs = endMs - startMs;
+
+const endedAt = new Date().toLocaleTimeString(
+  "de-DE",
+  {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    fractionalSecondDigits: 3,
+  }
+);
+
+  const startedAt = new Date().toLocaleTimeString(
+  "de-DE",
+  {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    fractionalSecondDigits: 3,
+  }
+);
+
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const startedAt = new Date().toLocaleTimeString();
+
+    const result = await new Promise<{
+      ok: boolean;
       reason: string;
-    }[] = [];
+    }>((resolve) => {
+      const img = new Image();
 
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      const startedAt = new Date().toLocaleTimeString();
+      img.decoding = "async";
 
-      const result = await new Promise<{
-        ok: boolean;
-        reason: string;
-      }>((resolve) => {
-        const img = new Image();
+      const timeout = setTimeout(() => {
+        resolve({
+          ok: false,
+          reason: "Timeout nach 200ms",
+        });
+      }, 200);
 
-        img.decoding = "async";
-
-        const timeout = setTimeout(() => {
-          resolve({
-            ok: false,
-            reason: "Timeout nach 200ms",
-          });
-        }, 200);
-
-        img.onload = () => {
-          clearTimeout(timeout);
-          resolve({
-            ok: true,
-            reason: "Erfolgreich geladen",
-          });
-        };
-
-        img.onerror = () => {
-          clearTimeout(timeout);
-          resolve({
-            ok: false,
-            reason: "Fehler beim Laden",
-          });
-        };
-
-        img.src = url;
-      });
-
-      const endedAt = new Date().toLocaleTimeString();
-
-      attempts.push({
-        attempt,
-        startedAt,
-        endedAt,
-        reason: result.reason,
-      });
-
-      if (result.ok) {
-        return {
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({
           ok: true,
-          attempts,
-        };
-      }
+          reason: "Erfolgreich geladen",
+        });
+      };
 
-      if (attempt < 5) {
-        await wait(50);
-      }
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({
+          ok: false,
+          reason: "Fehler beim Laden",
+        });
+      };
+
+      img.src = url;
+    });
+
+    const endedAt = new Date().toLocaleTimeString();
+
+    attempts.push({
+      attempt,
+      startedAt,
+      endedAt,
+      reason: result.reason,
+    });
+
+    if (result.ok) {
+      return {
+        ok: true,
+        attempts,
+      };
     }
 
-    return {
-      ok: false,
-      attempts,
-    };
+    if (attempt < 5) {
+      await wait(50);
+    }
   }
+
+  return {
+    ok: false,
+    attempts,
+  };
+}
 
   async function loadImagesLazyStyle() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
     setLoadReport([]);
 
-    const report: {
-      index: number;
-      url: string;
-      ok: boolean;
-      attempts: {
-        attempt: number;
-        startedAt: string;
-        endedAt: string;
-        reason: string;
-      }[];
-    }[] = [];
+const report: {
+  index: number;
+  url: string;
+  ok: boolean;
+  attempts: {
+    attempt: number;
+    startedAt: string;
+    endedAt: string;
+    reason: string;
+  }[];
+}[] = [];
 
     for (let i = 0; i < photos.length; i++) {
       if (cancelled) return;
@@ -158,14 +189,14 @@ useEffect(() => {
       const photo = photos[i];
       const url = photo.thumbnailUrl || photo.imageUrl;
 
-      const result = await preloadWithRetries(url);
+    const result = await preloadWithRetries(url);
 
-      report.push({
-        index: i + 1,
-        url,
-        ok: result.ok,
-        attempts: result.attempts,
-      });
+report.push({
+  index: i + 1,
+  url,
+  ok: result.ok,
+  attempts: result.attempts,
+});
 
       if (cancelled) return;
 
@@ -460,7 +491,8 @@ return (
 )}
    
 
-{loadReport.length > 0 && (
+
+ {loadReport.length > 0 && (
   <div className="fixed bottom-6 right-6 z-50 max-w-xl max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
     <h2 className="font-bold text-lg mb-3">
       Ladebericht
@@ -485,10 +517,21 @@ return (
               key={attempt.attempt}
               className="ml-2 mb-2 rounded-xl bg-black/5 p-2"
             >
-              <p>Versuch {attempt.attempt}</p>
-              <p>Start: {attempt.startedAt}</p>
-              <p>Ende: {attempt.endedAt}</p>
-              <p>Ursache: {attempt.reason}</p>
+              <p>
+                Versuch {attempt.attempt}
+              </p>
+
+              <p>
+                Start: {attempt.startedAt}
+              </p>
+
+              <p>
+                Ende: {attempt.endedAt}
+              </p>
+
+              <p>
+                Ursache: {attempt.reason}
+              </p>
             </div>
           ))}
         </div>
@@ -496,6 +539,7 @@ return (
     </div>
   </div>
 )}
+
 
   </main>
 );
