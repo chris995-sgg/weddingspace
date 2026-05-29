@@ -45,76 +45,53 @@ useEffect(() => {
   const wait = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  async function preloadOnce(url: string, timeoutMs = 500) {
-    return new Promise<{ url: string; ok: boolean }>((resolve) => {
-      const img = new Image();
-
-      img.decoding = "async";
-
-      const timeout = setTimeout(() => {
-        resolve({ url, ok: false });
-      }, timeoutMs);
-
-      img.onload = () => {
-        clearTimeout(timeout);
-        resolve({ url, ok: true });
-      };
-
-      img.onerror = () => {
-        clearTimeout(timeout);
-        resolve({ url, ok: false });
-      };
-
-      img.src = url;
-    });
-  }
-
-  async function retryFailedImages(
-    urls: string[],
-    timeoutMs: number
-  ) {
-    let failedUrls = urls;
-
+  async function preloadWithRetries(url: string) {
     for (let attempt = 1; attempt <= 5; attempt++) {
-      if (cancelled || failedUrls.length === 0) return;
+      if (cancelled) return false;
 
-      const stillFailed: string[] = [];
+      const success = await new Promise<boolean>((resolve) => {
+        const img = new Image();
 
-      for (const url of failedUrls) {
-        if (cancelled) return;
+        img.decoding = "async";
 
-        const result = await preloadOnce(url, timeoutMs);
+        const timeout = setTimeout(() => {
+          resolve(false);
+        }, 200);
 
-        if (!result.ok) {
-          stillFailed.push(url);
-        }
+        img.onload = () => {
+          clearTimeout(timeout);
+          resolve(true);
+        };
 
-        await wait(10);
+        img.onerror = () => {
+          clearTimeout(timeout);
+          resolve(false);
+        };
+
+        img.src = url;
+      });
+
+      if (success) return true;
+
+      if (attempt < 5) {
+        await wait(50);
       }
-
-      failedUrls = stillFailed;
     }
+
+    return false;
   }
 
-  async function loadImagesInOrder() {
+  async function loadImagesLazyStyle() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    const failedThumbnailUrls: string[] = [];
-    const failedOriginalUrls: string[] = [];
-
-    // 1. Vorschaubilder von oben nach unten laden
     for (let i = 0; i < photos.length; i++) {
       if (cancelled) return;
 
       const photo = photos[i];
       const url = photo.thumbnailUrl || photo.imageUrl;
 
-      const result = await preloadOnce(url, 500);
-
-      if (!result.ok) {
-        failedThumbnailUrls.push(url);
-      }
+      await preloadWithRetries(url);
 
       if (cancelled) return;
 
@@ -124,39 +101,15 @@ useEffect(() => {
 
       await wait(10);
     }
-
-    // 2. Fehlgeschlagene Vorschaubilder unten nochmal versuchen
-    await retryFailedImages(failedThumbnailUrls, 500);
-
-    if (cancelled) return;
-
-    // 3. Originalbilder genauso laden
-    for (const photo of photos) {
-      if (cancelled) return;
-
-      const result = await preloadOnce(photo.imageUrl, 500);
-
-      if (!result.ok) {
-        failedOriginalUrls.push(photo.imageUrl);
-      }
-
-      await wait(10);
-    }
-
-    // 4. Fehlgeschlagene Originalbilder nochmal 5x versuchen
-    await retryFailedImages(failedOriginalUrls, 500);
-
-    if (!cancelled) {
-      setPreloadedOriginals(true);
-    }
   }
 
-  loadImagesInOrder();
+  loadImagesLazyStyle();
 
   return () => {
     cancelled = true;
   };
 }, [photos]);
+
   useEffect(() => {
   const q = query(
     collection(db, "weddings", weddingId, "photos"),
@@ -334,22 +287,24 @@ return (
         onClick={() => setSelectedPhoto(photo)}
         className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
       >
-      <img
-      src={photo.thumbnailUrl || photo.imageUrl}
-      loading="eager"
-      decoding="async"
-      alt=""
-      onError={(e) => {
-        const img = e.currentTarget;
+<img
+  src={photo.thumbnailUrl || photo.imageUrl}
+  loading="lazy"
+  decoding="async"
+  alt=""
+  onError={(e) => {
+    const img = e.currentTarget;
 
-        if (
-          photo.thumbnailUrl &&
-          img.src === photo.thumbnailUrl
-        ) {
-          img.src = photo.imageUrl;
-        }
-      }}
-      className="w-full h-64 object-cover"
+    if (
+      photo.thumbnailUrl &&
+      img.src === photo.thumbnailUrl
+    ) {
+      img.src = photo.imageUrl;
+    }
+  }}
+  className="w-full h-64 object-cover"
+
+
     />
       </button>
 
