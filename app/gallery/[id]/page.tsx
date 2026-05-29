@@ -116,9 +116,9 @@ const endedAt = new Date().toLocaleTimeString(
       const timeout = setTimeout(() => {
         resolve({
           ok: false,
-          reason: "Timeout nach 200ms",
+          reason: "Timeout nach 1000ms",
         });
-      }, 200);
+      }, 1000);
 
       img.onload = () => {
         clearTimeout(timeout);
