@@ -73,9 +73,9 @@ useEffect(() => {
         const timeout = setTimeout(() => {
           resolve({
             ok: false,
-            reason: "Timeout nach 200ms",
+            reason: "Timeout nach 500ms",
           });
-        }, 200);
+        }, 500);
 
         img.onload = () => {
           clearTimeout(timeout);
@@ -107,7 +107,7 @@ useEffect(() => {
       }
 
       if (attempt < 5) {
-        await wait(50);
+        await wait(20);
       }
     }
 
