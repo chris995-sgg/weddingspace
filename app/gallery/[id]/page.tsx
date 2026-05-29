@@ -89,7 +89,7 @@ if (attempt < 3 && failedUrls.length > 0) {
   );
 }
 
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 10));
 }
 }
 
@@ -119,7 +119,7 @@ async function preloadSingleOriginal(url: string) {
 
     if (!success && attempt < 5) {
   await new Promise((resolve) =>
-    setTimeout(resolve, 10)
+    setTimeout(resolve, 100)
   );
   }
 }
@@ -130,10 +130,10 @@ async function preloadSingleOriginal(url: string) {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 2){
+    for (let i = 0; i < photos.length; i += 4){
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 2);
+      const batch = photos.slice(i, i + 4);
 
       await preloadBatch(
         batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
