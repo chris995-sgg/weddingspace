@@ -55,7 +55,7 @@ async function preloadBatch(urls: string[]) {
 
             const timeout = setTimeout(() => {
               resolve({ url, ok: false });
-            }, 1000);
+            }, 2000);
 
             img.onload = () => {
               clearTimeout(timeout);
@@ -119,7 +119,7 @@ async function preloadSingleOriginal(url: string) {
 
     if (!success && attempt < 5) {
   await new Promise((resolve) =>
-    setTimeout(resolve, 100)
+    setTimeout(resolve, 10)
   );
   }
 }
@@ -130,10 +130,10 @@ async function preloadSingleOriginal(url: string) {
     setVisibleCount(0);
     setPreloadedOriginals(false);
 
-    for (let i = 0; i < photos.length; i += 4){
+    for (let i = 0; i < photos.length; i += 2){
       if (cancelled) return;
 
-      const batch = photos.slice(i, i + 4);
+      const batch = photos.slice(i, i + 2);
 
       await preloadBatch(
         batch.map((photo) => photo.thumbnailUrl || photo.imageUrl)
@@ -151,7 +151,7 @@ for (const photo of photos) {
 
   await preloadSingleOriginal(photo.imageUrl);
 
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 10));
 }
 
   }
@@ -260,7 +260,7 @@ async function downloadSelectedPhotos() {
 
     setTimeout(() => {
       URL.revokeObjectURL(url);
-    }, 5000);
+    }, 4000);
   } catch (error) {
     console.error(error);
     alert("Download fehlgeschlagen.");
