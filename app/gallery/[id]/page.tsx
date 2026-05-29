@@ -47,12 +47,11 @@ const [loadReport, setLoadReport] = useState<
       attempt: number;
       startedAt: string;
       endedAt: string;
+      durationMs: number;
       reason: string;
     }[];
   }[]
-
- >([]);
-
+>([]);
   
 
 
@@ -65,88 +64,78 @@ useEffect(() => {
     new Promise((resolve) => setTimeout(resolve, ms));
 
   async function preloadWithRetries(url: string) {
-  const attempts: {
-    attempt: number;
-    startedAt: string;
-    endedAt: string;
-    reason: string;
-  }[] = [];
+const attempts: {
+  attempt: number;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  reason: string;
+}[] = [];
 
+
+
+ for (let attempt = 1; attempt <= 5; attempt++) {
   const startMs = performance.now();
 
-// Ladeversuch
-
-const endMs = performance.now();
-
-const durationMs = endMs - startMs;
-
-const endedAt = new Date().toLocaleTimeString(
-  "de-DE",
-  {
+  const startedAt = new Date().toLocaleTimeString("de-DE", {
     hour12: false,
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     fractionalSecondDigits: 3,
-  }
-);
+  });
 
-  const startedAt = new Date().toLocaleTimeString(
-  "de-DE",
-  {
+const result = await new Promise<{
+  ok: boolean;
+  reason: string;
+}>((resolve) => {
+  const img = new Image();
+
+  img.decoding = "async";
+
+  const timeout = setTimeout(() => {
+    resolve({
+      ok: false,
+      reason: "Timeout nach 1000ms",
+    });
+  }, 1000);
+
+  img.onload = () => {
+    clearTimeout(timeout);
+    resolve({
+      ok: true,
+      reason: "Erfolgreich geladen",
+    });
+  };
+
+  img.onerror = () => {
+    clearTimeout(timeout);
+    resolve({
+      ok: false,
+      reason: "Fehler beim Laden",
+    });
+  };
+
+  img.src = url;
+});
+
+  const endMs = performance.now();
+
+  const endedAt = new Date().toLocaleTimeString("de-DE", {
     hour12: false,
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     fractionalSecondDigits: 3,
-  }
-);
+  });
 
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    const startedAt = new Date().toLocaleTimeString();
-
-    const result = await new Promise<{
-      ok: boolean;
-      reason: string;
-    }>((resolve) => {
-      const img = new Image();
-
-      img.decoding = "async";
-
-      const timeout = setTimeout(() => {
-        resolve({
-          ok: false,
-          reason: "Timeout nach 1000ms",
-        });
-      }, 1000);
-
-      img.onload = () => {
-        clearTimeout(timeout);
-        resolve({
-          ok: true,
-          reason: "Erfolgreich geladen",
-        });
-      };
-
-      img.onerror = () => {
-        clearTimeout(timeout);
-        resolve({
-          ok: false,
-          reason: "Fehler beim Laden",
-        });
-      };
-
-      img.src = url;
-    });
-
-    const endedAt = new Date().toLocaleTimeString();
-
-    attempts.push({
-      attempt,
-      startedAt,
-      endedAt,
-      reason: result.reason,
-    });
+attempts.push({
+  attempt,
+  startedAt,
+  endedAt,
+  durationMs: Math.round(endMs - startMs),
+  reason: result.reason,
+});
 
     if (result.ok) {
       return {
@@ -175,12 +164,15 @@ const report: {
   index: number;
   url: string;
   ok: boolean;
+
   attempts: {
-    attempt: number;
-    startedAt: string;
-    endedAt: string;
-    reason: string;
-  }[];
+  attempt: number;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  reason: string;
+}[];
+
 }[] = [];
 
     for (let i = 0; i < photos.length; i++) {
@@ -527,6 +519,10 @@ return (
 
               <p>
                 Ende: {attempt.endedAt}
+              </p>
+
+              <p>
+                Dauer: {attempt.durationMs} ms
               </p>
 
               <p>
