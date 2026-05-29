@@ -178,7 +178,7 @@ const report: {
 }[] = [];
 
  for (let i = 0; i < photos.length; i += 12) {
-  if (cancelled) return;
+    if (cancelled) return;
 
   const batch = photos.slice(i, i + 12);
 
