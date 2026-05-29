@@ -97,9 +97,9 @@ const result = await new Promise<{
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 700ms",
+      reason: "Timeout nach 1200ms",
     });
-  }, 700);
+  }, 1200);
 
   img.onload = () => {
     clearTimeout(timeout);
@@ -177,10 +177,10 @@ const report: {
 
 }[] = [];
 
- for (let i = 0; i < photos.length; i += 12) {
+ for (let i = 0; i < photos.length; i += 8) {
     if (cancelled) return;
 
-  const batch = photos.slice(i, i + 12);
+  const batch = photos.slice(i, i + 8);
 
   const results = await Promise.all(
     batch.map(async (photo, indexInBatch) => {
