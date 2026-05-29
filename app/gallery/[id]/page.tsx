@@ -36,13 +36,22 @@ export default function GalleryPage() {
   const selectedIndex = photos.findIndex(
     (photo) => photo.id === selectedPhoto?.id
   );
+
+  
 const [loadReport, setLoadReport] = useState<
   {
     index: number;
     url: string;
-    attempts: number;
-    reason: string;
+    ok: boolean;
+    attempts: {
+      attempt: number;
+      startedAt: string;
+      endedAt: string;
+      reason: string;
+    }[];
   }[]
+
+  
 >([]);
 
 
@@ -55,12 +64,15 @@ useEffect(() => {
     new Promise((resolve) => setTimeout(resolve, ms));
 
   async function preloadWithRetries(url: string) {
-    let lastReason = "";
+    const attempts: {
+      attempt: number;
+      startedAt: string;
+      endedAt: string;
+      reason: string;
+    }[] = [];
 
     for (let attempt = 1; attempt <= 5; attempt++) {
-      if (cancelled) {
-        return { ok: false, attempts: attempt, reason: "Abgebrochen" };
-      }
+      const startedAt = new Date().toLocaleTimeString();
 
       const result = await new Promise<{
         ok: boolean;
@@ -73,9 +85,9 @@ useEffect(() => {
         const timeout = setTimeout(() => {
           resolve({
             ok: false,
-            reason: "Timeout nach 500ms",
+            reason: "Timeout nach 200ms",
           });
-        }, 500);
+        }, 200);
 
         img.onload = () => {
           clearTimeout(timeout);
@@ -96,25 +108,30 @@ useEffect(() => {
         img.src = url;
       });
 
-      lastReason = result.reason;
+      const endedAt = new Date().toLocaleTimeString();
+
+      attempts.push({
+        attempt,
+        startedAt,
+        endedAt,
+        reason: result.reason,
+      });
 
       if (result.ok) {
         return {
           ok: true,
-          attempts: attempt,
-          reason: result.reason,
+          attempts,
         };
       }
 
       if (attempt < 5) {
-        await wait(20);
+        await wait(50);
       }
     }
 
     return {
       ok: false,
-      attempts: 5,
-      reason: lastReason,
+      attempts,
     };
   }
 
@@ -126,8 +143,13 @@ useEffect(() => {
     const report: {
       index: number;
       url: string;
-      attempts: number;
-      reason: string;
+      ok: boolean;
+      attempts: {
+        attempt: number;
+        startedAt: string;
+        endedAt: string;
+        reason: string;
+      }[];
     }[] = [];
 
     for (let i = 0; i < photos.length; i++) {
@@ -141,8 +163,8 @@ useEffect(() => {
       report.push({
         index: i + 1,
         url,
+        ok: result.ok,
         attempts: result.attempts,
-        reason: result.reason,
       });
 
       if (cancelled) return;
@@ -438,40 +460,42 @@ return (
 )}
    
 
-
-  {loadReport.length > 0 && (
-  <div className="fixed bottom-6 right-6 z-50 max-w-md max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
+{loadReport.length > 0 && (
+  <div className="fixed bottom-6 right-6 z-50 max-w-xl max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
     <h2 className="font-bold text-lg mb-3">
       Ladebericht
     </h2>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       {loadReport.map((item) => (
         <div
           key={`${item.index}-${item.url}`}
-          className="border-b border-[#ddd] pb-2"
+          className="border-b border-[#ddd] pb-3"
         >
           <p className="font-semibold">
-            Bild {item.index}
+            Bild {item.index} — {item.ok ? "OK" : "Fehlgeschlagen"}
           </p>
 
-          <p>
-            Versuche: {item.attempts}
-          </p>
-
-          <p>
-            Ergebnis: {item.reason}
-          </p>
-
-          <p className="text-xs break-all opacity-70">
+          <p className="text-xs break-all opacity-70 mb-2">
             {item.url}
           </p>
+
+          {item.attempts.map((attempt) => (
+            <div
+              key={attempt.attempt}
+              className="ml-2 mb-2 rounded-xl bg-black/5 p-2"
+            >
+              <p>Versuch {attempt.attempt}</p>
+              <p>Start: {attempt.startedAt}</p>
+              <p>Ende: {attempt.endedAt}</p>
+              <p>Ursache: {attempt.reason}</p>
+            </div>
+          ))}
         </div>
       ))}
     </div>
   </div>
 )}
-
 
   </main>
 );
