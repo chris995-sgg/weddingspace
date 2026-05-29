@@ -37,6 +37,8 @@ export default function GalleryPage() {
     (photo) => photo.id === selectedPhoto?.id
   );
 
+const [totalDurationMs, setTotalDurationMs] =
+  useState<number | null>(null);
 
 const [loadReport, setLoadReport] = useState<
   {
@@ -155,10 +157,11 @@ attempts.push({
   };
 }
 
-  async function loadImagesLazyStyle() {
+  async function loadImagesInOrderStyle() {
     setVisibleCount(0);
     setPreloadedOriginals(false);
     setLoadReport([]);
+    const overallStart = performance.now();
 
 const report: {
   index: number;
@@ -200,11 +203,18 @@ report.push({
     }
 
     if (!cancelled) {
+
+      const overallEnd = performance.now();
+      const totalTime = Math.round(
+      overallEnd - overallStart
+);
+
+      setTotalDurationMs(totalTime);
       setLoadReport(report);
     }
   }
 
-  loadImagesLazyStyle();
+  loadImagesInOrderStyle();
 
   return () => {
     cancelled = true;
@@ -331,7 +341,8 @@ return (
          ← Zurück zum Dashboard
          </Link>
 
-      <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-4 md:p-6 border border-white/20 mt-16 md:mt-0">
+      <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+      
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 
@@ -392,7 +403,7 @@ return (
       >
 <img
   src={photo.thumbnailUrl || photo.imageUrl}
-  loading="lazy"
+  loading="eager"
   decoding="async"
   alt=""
   onError={(e) => {
@@ -405,7 +416,7 @@ return (
       img.src = photo.imageUrl;
     }
   }}
-  className="w-full h-64 object-cover"
+  className="w-full h-64 object-cover rounded-2xl"
 
 
 
@@ -489,6 +500,26 @@ return (
     <h2 className="font-bold text-lg mb-3">
       Ladebericht
     </h2>
+
+    {totalDurationMs !== null && (
+  <div className="mb-4 p-3 rounded-xl bg-black/5">
+    <p>
+      Gesamtzeit:
+      {" "}
+      <strong>
+        {totalDurationMs} ms
+      </strong>
+    </p>
+
+    <p>
+      Sekunden:
+      {" "}
+      <strong>
+        {(totalDurationMs / 1000).toFixed(2)}
+      </strong>
+    </p>
+  </div>
+)}
 
     <div className="space-y-4">
       {loadReport.map((item) => (
