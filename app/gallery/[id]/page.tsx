@@ -177,29 +177,38 @@ const report: {
 
 }[] = [];
 
-    for (let i = 0; i < photos.length; i++) {
-      if (cancelled) return;
+ for (let i = 0; i < photos.length; i += 3) {
+  if (cancelled) return;
 
-      const photo = photos[i];
-      const url = photo.thumbnailUrl || photo.imageUrl;
+  const batch = photos.slice(i, i + 3);
 
-    const result = await preloadWithRetries(url);
+  const results = await Promise.all(
+    batch.map(async (photo, indexInBatch) => {
+      const url =
+        photo.thumbnailUrl || photo.imageUrl;
 
-report.push({
-  index: i + 1,
-  url,
-  ok: result.ok,
-  attempts: result.attempts,
-});
+      const result =
+        await preloadWithRetries(url);
 
-      if (cancelled) return;
+      return {
+        index: i + indexInBatch + 1,
+        url,
+        ok: result.ok,
+        attempts: result.attempts,
+      };
+    })
+  );
 
-      setVisibleCount((prev) =>
-        Math.min(prev + 1, photos.length)
-      );
+  report.push(...results);
 
-      await wait(10);
-    }
+  if (cancelled) return;
+
+  setVisibleCount((prev) =>
+    Math.min(prev + batch.length, photos.length)
+  );
+
+  await wait(10);
+}
 
     if (!cancelled) {
 
