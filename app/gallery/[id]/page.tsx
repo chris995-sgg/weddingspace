@@ -97,9 +97,9 @@ const result = await new Promise<{
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 30000ms",
+      reason: "Timeout nach 3000ms",
     });
-  }, 30000);
+  }, 3000);
 
   img.onload = () => {
     clearTimeout(timeout);
