@@ -138,7 +138,7 @@ if (!thumbnailResponse.ok) {
     setUploadedCount(0);
 
     try {
-      const CONCURRENT_UPLOADS = 4
+      const CONCURRENT_UPLOADS = 2
 
       for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
         const batch = files.slice(i, i + CONCURRENT_UPLOADS);
