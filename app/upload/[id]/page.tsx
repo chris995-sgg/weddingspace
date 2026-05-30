@@ -17,8 +17,8 @@ export default function UploadPage() {
  
   async function createThumbnail(file: File) {
   return await imageCompression(file, {
-    maxSizeMB: 0.1,
-    maxWidthOrHeight: 500,
+    maxSizeMB: 5,
+    maxWidthOrHeight: 5000,
     useWebWorker: true,
   });
 }
