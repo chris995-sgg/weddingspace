@@ -107,6 +107,7 @@ const result = await new Promise<{
       ok: true,
       reason: "Erfolgreich geladen",
     });
+    
   };
 
   img.onerror = () => {
