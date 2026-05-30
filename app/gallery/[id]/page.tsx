@@ -74,7 +74,7 @@ const attempts: {
 
 
 
- for (let attempt = 1; attempt <= 20; attempt++) {
+ for (let attempt = 1; attempt <= 10; attempt++) {
   const startMs = performance.now();
 
   const startedAt = new Date().toLocaleTimeString("de-DE", {
@@ -145,7 +145,7 @@ attempts.push({
       };
     }
 
-    if (attempt < 20) {
+    if (attempt < 10) {
       await wait(5);
     }
   }
@@ -177,10 +177,10 @@ const report: {
 
 }[] = [];
 
- for (let i = 0; i < photos.length; i += 8) {
+ for (let i = 0; i < photos.length; i += 1) {
     if (cancelled) return;
 
-  const batch = photos.slice(i, i + 8);
+  const batch = photos.slice(i, i + 1);
 
   const results = await Promise.all(
     batch.map(async (photo, indexInBatch) => {
