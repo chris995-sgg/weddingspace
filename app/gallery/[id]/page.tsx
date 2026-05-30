@@ -177,10 +177,10 @@ const report: {
 
 }[] = [];
 
- for (let i = 0; i < photos.length; i += 1) {
+ for (let i = 0; i < photos.length; i += 16) {
     if (cancelled) return;
 
-  const batch = photos.slice(i, i + 1);
+  const batch = photos.slice(i, i + 16);
 
   const results = await Promise.all(
     batch.map(async (photo, indexInBatch) => {
