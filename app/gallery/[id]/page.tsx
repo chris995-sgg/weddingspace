@@ -97,9 +97,9 @@ const result = await new Promise<{
   const timeout = setTimeout(() => {
     resolve({
       ok: false,
-      reason: "Timeout nach 2000ms",
+      reason: "Timeout nach 1000ms",
     });
-  }, 2000);
+  }, 1000);
 
   img.onload = () => {
     clearTimeout(timeout);
@@ -182,7 +182,7 @@ const report: {
 
   const batch = photos.slice(i, i + 8);
 
-  
+
   const results = await Promise.all(
     batch.map(async (photo, indexInBatch) => {
       const url =
