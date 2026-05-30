@@ -177,11 +177,12 @@ const report: {
 
 }[] = [];
 
- for (let i = 0; i < photos.length; i += 4) {
+ for (let i = 0; i < photos.length; i += 8) {
     if (cancelled) return;
 
-  const batch = photos.slice(i, i + 4);
+  const batch = photos.slice(i, i + 8);
 
+  
   const results = await Promise.all(
     batch.map(async (photo, indexInBatch) => {
       const url =
