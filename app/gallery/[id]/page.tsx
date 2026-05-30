@@ -16,7 +16,6 @@ import { useParams } from "next/navigation";
 type Photo = {
   id: string;
   imageUrl: string;
-  thumbnailUrl?: string;
   guestName: string;
 };
 
@@ -186,7 +185,7 @@ const report: {
   const results = await Promise.all(
     batch.map(async (photo, indexInBatch) => {
       const url =
-        photo.thumbnailUrl || photo.imageUrl;
+        photo.imageUrl;
 
       const result =
         await preloadWithRetries(url);
@@ -411,19 +410,13 @@ return (
         className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
       >
 <img
-  src={photo.thumbnailUrl || photo.imageUrl}
+  src={photo.imageUrl}
   loading="eager"
   decoding="async"
   alt=""
   onError={(e) => {
     const img = e.currentTarget;
 
-    if (
-      photo.thumbnailUrl &&
-      img.src === photo.thumbnailUrl
-    ) {
-      img.src = photo.imageUrl;
-    }
   }}
   className="w-full h-64 object-cover rounded-2xl"
 

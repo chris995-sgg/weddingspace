@@ -15,14 +15,6 @@ export default function UploadPage() {
   const [uploadedCount, setUploadedCount] = useState(0);
 
  
-  async function createThumbnail(file: File) {
-  return await imageCompression(file, {
-    maxSizeMB: 5,
-    maxWidthOrHeight: 5000,
-    useWebWorker: true,
-  });
-}
- 
  async function uploadSingleFile(file: File) {
   let uploadFile = file;
 
@@ -33,51 +25,20 @@ export default function UploadPage() {
     });
   }
 
-  const thumbnailFile = await createThumbnail(file);
-
-  const [uploadLinkResponse, thumbnailUploadLinkResponse] =
-    await Promise.all([
-      fetch("/api/create-upload-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          weddingId,
-          fileName: uploadFile.name,
-          sizeBytes: uploadFile.size,
-        }),
-      }),
-
-      fetch("/api/create-upload-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          weddingId,
-          fileName: "thumb-" + uploadFile.name,
-          sizeBytes: thumbnailFile.size,
-        }),
-      }),
-    ]);
+  const uploadLinkResponse = await fetch("/api/create-upload-link", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    weddingId,
+    fileName: uploadFile.name,
+    sizeBytes: uploadFile.size,
+  }),
+});
 
   const uploadLinkData = await uploadLinkResponse.json();
-  const thumbnailUploadLinkData =
-    await thumbnailUploadLinkResponse.json();
-
-  if (!uploadLinkResponse.ok) {
-    throw new Error(
-      uploadLinkData.error || "Upload-Link Fehler"
-    );
-  }
-
-  if (!thumbnailUploadLinkResponse.ok) {
-    throw new Error(
-      thumbnailUploadLinkData.error ||
-        "Thumbnail Upload-Link Fehler"
-    );
-  }
+  
 
  const originalResponse = await fetch(uploadLinkData.uploadLink, {
   method: "POST",
@@ -91,18 +52,6 @@ if (!originalResponse.ok) {
   throw new Error("Dropbox Upload fehlgeschlagen");
 }
 
-const thumbnailResponse = await fetch(thumbnailUploadLinkData.uploadLink, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/octet-stream",
-  },
-  body: thumbnailFile,
-});
-
-if (!thumbnailResponse.ok) {
-  throw new Error("Thumbnail Upload fehlgeschlagen");
-}
-
   const completeResponse = await fetch("/api/complete-upload", {
     method: "POST",
     headers: {
@@ -113,8 +62,6 @@ if (!thumbnailResponse.ok) {
       guestName,
       fileName: uploadLinkData.fileName,
       dropboxPath: uploadLinkData.dropboxPath,
-      thumbnailDropboxPath:
-        thumbnailUploadLinkData.dropboxPath,
       sizeBytes: uploadFile.size,
     }),
   });
@@ -138,7 +85,7 @@ if (!thumbnailResponse.ok) {
     setUploadedCount(0);
 
     try {
-      const CONCURRENT_UPLOADS = 2
+      const CONCURRENT_UPLOADS = 3
 
       for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
         const batch = files.slice(i, i + CONCURRENT_UPLOADS);

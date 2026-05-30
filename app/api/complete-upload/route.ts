@@ -68,7 +68,6 @@ export async function POST(req: Request) {
       guestName,
       fileName,
       dropboxPath,
-      thumbnailDropboxPath,
       sizeBytes,
     } = await req.json();
 
@@ -78,8 +77,7 @@ export async function POST(req: Request) {
     if (
       !weddingId ||
       !fileName ||
-      !dropboxPath ||
-      !thumbnailDropboxPath
+      !dropboxPath 
     ) {
       return Response.json(
         { error: "Daten fehlen" },
@@ -193,62 +191,6 @@ export async function POST(req: Request) {
       "&raw=1"
     );
 
-    // ==========================================
-// THUMBNAIL LINK ERZEUGEN
-// ==========================================
-const thumbnailLinkResponse = await fetch(
-  "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
-  {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type":
-        "application/json",
-    },
-    body: JSON.stringify({
-      path: thumbnailDropboxPath,
-    }),
-  }
-);
-
-const thumbnailLinkData =
-  await thumbnailLinkResponse.json();
-
-if (!thumbnailLinkResponse.ok) {
-  console.error(
-    "Dropbox Thumbnail Link Fehler:",
-    thumbnailLinkData
-  );
-
-  return Response.json(
-    {
-      error:
-        "Dropbox Thumbnail Link Fehler",
-    },
-    { status: 500 }
-  );
-}
-
-let thumbnailUrl =
-  thumbnailLinkData.url;
-
-thumbnailUrl =
-  thumbnailUrl.replace(
-    "www.dropbox.com",
-    "dl.dropboxusercontent.com"
-  );
-
-thumbnailUrl =
-  thumbnailUrl.replace(
-    "?dl=0",
-    "?raw=1"
-  );
-
-thumbnailUrl =
-  thumbnailUrl.replace(
-    "&dl=0",
-    "&raw=1"
-  );
 
     // ==========================================
     // FOTO IN FIRESTORE SPEICHERN
@@ -263,13 +205,8 @@ await addDoc(
   {
     guestName: guestName || "Gast",
     fileName,
-
     imageUrl,
-    thumbnailUrl,
-
     dropboxPath,
-    thumbnailDropboxPath,
-
     sizeBytes: fileSize,
     createdAt: new Date(),
   }
