@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
       <button
         onClick={logout}
-        className="bg-white/50 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+        className="bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
       >
         Logout
       </button>

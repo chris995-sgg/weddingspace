@@ -35,6 +35,11 @@ body::before {
   background-repeat: no-repeat;
 }
 
+@media (max-width: 768px) {
+  body::before {
+    background-position: left top;
+
+  }}
 * {
   box-sizing: border-box;
 }

@@ -111,13 +111,13 @@ export default function WeddingPage() {
 
     <Link
          href="/dashboard"
-         className="absolute top-6 left-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+         className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
            >
          ← Zurück zum Dashboard
      </Link>
 
 
-  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+  <div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
       <h1 className="text-4xl font-bold mb-2 text-[#3b3128]">
         Event bearbeiten
