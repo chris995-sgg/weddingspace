@@ -14,101 +14,140 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
 
- 
- async function uploadSingleFile(file: File) {
-  let uploadFile = file;
-
-  if (file.size > 5 * 1024 * 1024) {
-    uploadFile = await imageCompression(file, {
-      maxSizeMB: 5,
-      useWebWorker: true,
-    });
+ async function uploadPhoto() {
+  if (files.length === 0) {
+    alert("Bitte wähle mindestens ein Foto aus.");
+    return;
   }
 
-  const uploadLinkResponse = await fetch("/api/create-upload-link", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    weddingId,
-    fileName: uploadFile.name,
-    sizeBytes: uploadFile.size,
-  }),
-});
+  setLoading(true);
+  setUploadedCount(0);
 
-  const uploadLinkData = await uploadLinkResponse.json();
-  
+  try {
+    const CONCURRENT_UPLOADS = 3;
 
- const originalResponse = await fetch(uploadLinkData.uploadLink, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/octet-stream",
-  },
-  body: uploadFile,
-});
+    for (
+      let i = 0;
+      i < files.length;
+      i += CONCURRENT_UPLOADS
+    ) {
+      const batch = files.slice(
+        i,
+        i + CONCURRENT_UPLOADS
+      );
 
-if (!originalResponse.ok) {
-  throw new Error("Dropbox Upload fehlgeschlagen");
-}
+      const preparedBatch = await Promise.all(
+        batch.map(async (file) => {
+          let uploadFile = file;
 
-  const completeResponse = await fetch("/api/complete-upload", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      weddingId,
-      guestName,
-      fileName: uploadLinkData.fileName,
-      dropboxPath: uploadLinkData.dropboxPath,
-      sizeBytes: uploadFile.size,
-    }),
-  });
+          if (file.size > 5 * 1024 * 1024) {
+            uploadFile = await imageCompression(file, {
+              maxSizeMB: 5,
+              useWebWorker: true,
+            });
+          }
 
-  const completeData = await completeResponse.json();
+          return uploadFile;
+        })
+      );
 
-  if (!completeResponse.ok) {
-    throw new Error(
-      completeData.error || "Upload Abschluss fehlgeschlagen"
-    );
-  }
-}
+      const uploadLinksResponse = await fetch(
+        "/api/create-upload-links",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            weddingId,
+            files: preparedBatch.map((file) => ({
+              fileName: file.name,
+              sizeBytes: file.size,
+            })),
+          }),
+        }
+      );
 
-  async function uploadPhoto() {
-    if (files.length === 0) {
-      alert("Bitte wähle mindestens ein Foto aus.");
-      return;
-    }
+      const uploadLinksData =
+        await uploadLinksResponse.json();
 
-    setLoading(true);
-    setUploadedCount(0);
-
-    try {
-      const CONCURRENT_UPLOADS = 3
-
-      for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
-        const batch = files.slice(i, i + CONCURRENT_UPLOADS);
-
-        await Promise.all(
-         batch.map(async (file) => {
-           await uploadSingleFile(file);
-            setUploadedCount((prev) => prev + 1);
-            await new Promise((resolve) => setTimeout(resolve, 50));
-          })
+      if (!uploadLinksResponse.ok) {
+        throw new Error(
+          uploadLinksData.error ||
+            "Upload-Links Fehler"
         );
       }
 
-      alert("Fotos erfolgreich hochgeladen!");
-      setFiles([]);
-      setGuestName("");
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Fehler beim Upload.");
+      await Promise.all(
+        preparedBatch.map(async (file, index) => {
+          const uploadData =
+            uploadLinksData.uploads[index];
+
+          const uploadResponse = await fetch(
+            uploadData.uploadLink,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/octet-stream",
+              },
+              body: file,
+            }
+          );
+
+          if (!uploadResponse.ok) {
+            throw new Error(
+              "Dropbox Upload fehlgeschlagen"
+            );
+          }
+
+          const completeResponse = await fetch(
+            "/api/complete-upload",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                weddingId,
+                guestName,
+                fileName: uploadData.fileName,
+                dropboxPath: uploadData.dropboxPath,
+                sizeBytes: file.size,
+              }),
+            }
+          );
+
+          const completeData =
+            await completeResponse.json();
+
+          if (!completeResponse.ok) {
+            throw new Error(
+              completeData.error ||
+                "Upload Abschluss fehlgeschlagen"
+            );
+          }
+
+          setUploadedCount((prev) => prev + 1);
+        })
+      );
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, 50)
+      );
     }
 
-    setLoading(false);
+    alert("Fotos erfolgreich hochgeladen!");
+    setFiles([]);
+    setGuestName("");
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message || "Fehler beim Upload.");
   }
+
+  setLoading(false);
+}
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 relative text-black">

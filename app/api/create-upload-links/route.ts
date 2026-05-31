@@ -5,7 +5,19 @@ import {
   getDoc,
 } from "firebase/firestore";
 
+let cachedDropboxToken: string | null = null;
+
+function clearDropboxTokenCache() {
+  cachedDropboxToken = null;
+}
+
+
 async function getDropboxAccessToken() {
+
+  if (cachedDropboxToken) {
+  return cachedDropboxToken;
+}
+  
   const refreshToken =
     process.env.DROPBOX_REFRESH_TOKEN;
 
@@ -55,34 +67,71 @@ async function getDropboxAccessToken() {
     );
   }
 
-  return data.access_token;
+  cachedDropboxToken = data.access_token;
+
+return cachedDropboxToken;
+}
+
+async function fetchDropbox(
+  url: string,
+  options: RequestInit
+) {
+  let token =
+    await getDropboxAccessToken();
+
+  let response = await fetch(url, {
+    ...options,
+   headers: {
+  ...options.headers,
+  Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 401) {
+    clearDropboxTokenCache();
+
+    token =
+      await getDropboxAccessToken();
+
+    response = await fetch(url, {
+      ...options,
+  headers: {
+  ...options.headers,
+  Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  return response;
 }
 
 export async function POST(req: Request) {
   try {
-    const {
-      weddingId,
-      fileName,
-      sizeBytes,
-    } = await req.json();
+    
+const {
+  weddingId,
+  files,
+} = await req.json();
+   
 
     // ==========================================
     // DATEN PRÜFEN
     // ==========================================
-    if (
-      !weddingId ||
-      !fileName ||
-      !sizeBytes
-    ) {
+ if (
+  !weddingId ||
+  !Array.isArray(files) ||
+  files.length === 0
+) {
       return Response.json(
         { error: "Daten fehlen" },
         { status: 400 }
       );
     }
 
-    const fileSize =
-      Number(sizeBytes);
-
+ const totalFileSize = files.reduce(
+  (sum, file) => sum + Number(file.sizeBytes || 0),
+  0
+);
     // ==========================================
     // WEDDING ID SICHER MACHEN
     // ==========================================
@@ -122,8 +171,8 @@ export async function POST(req: Request) {
       5 * 1024 * 1024 * 1024;
 
     if (
-      currentBytes + fileSize >
-      MAX_EVENT_BYTES
+     currentBytes + totalFileSize >
+    MAX_EVENT_BYTES
     ) {
       return Response.json(
         {
@@ -134,38 +183,24 @@ export async function POST(req: Request) {
       );
     }
 
-    // ==========================================
-    // DROPBOX TOKEN HOLEN
-    // ==========================================
-    const token =
-      await getDropboxAccessToken();
 
-    // ==========================================
-    // DATEINAME SICHER MACHEN
-    // ==========================================
+const uploads = await Promise.all(
+  files.map(async (file) => {
     const safeFileName =
-      String(fileName).replace(
+      String(file.fileName).replace(
         /[^a-zA-Z0-9._-]/g,
         "_"
       );
 
-    // ==========================================
-    // DROPBOX PFAD
-    // ==========================================
     const dropboxPath =
       `/event/${safeWeddingId}/${Date.now()}-${safeFileName}`;
 
-    // ==========================================
-    // TEMPORARY UPLOAD LINK ERSTELLEN
-    // ==========================================
-    const response = await fetch(
+    const response = await fetchDropbox(
       "https://api.dropboxapi.com/2/files/get_temporary_upload_link",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           commit_info: {
@@ -182,28 +217,21 @@ export async function POST(req: Request) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error(
-        "Dropbox Upload-Link Fehler:",
-        data
-      );
-
-      return Response.json(
-        {
-          error:
-            "Upload-Link konnte nicht erstellt werden",
-        },
-        { status: 500 }
-      );
+      console.error("Dropbox Upload-Link Fehler:", data);
+      throw new Error("Upload-Link konnte nicht erstellt werden");
     }
 
-    // ==========================================
-    // LINK ZURÜCKGEBEN
-    // ==========================================
-    return Response.json({
+    return {
       uploadLink: data.link,
       dropboxPath,
       fileName: safeFileName,
-    });
+    };
+  })
+);
+
+return Response.json({
+  uploads,
+});
   } catch (error) {
     console.error(error);
 
