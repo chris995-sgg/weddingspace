@@ -39,7 +39,7 @@ const totalStart = performance.now();
 const report: UploadReportItem[] = [];
 
   try {
-    const CONCURRENT_UPLOADS = 3;
+    const CONCURRENT_UPLOADS = 5;
 
     for (
       let i = 0;
