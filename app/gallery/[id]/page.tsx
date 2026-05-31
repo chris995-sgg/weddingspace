@@ -346,12 +346,12 @@ return (
 
         <Link
          href="/dashboard"
-         className="absolute top-6 left-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+         className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
            >
          ← Zurück zum Dashboard
          </Link>
 
-      <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+      <div className="bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
       
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -390,13 +390,13 @@ return (
 
       {photos.length === 0 ? (
 
-        <div className="bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
+        
 
           <p className="text-[#6b5c4d]">
             Noch keine Fotos hochgeladen.
           </p>
 
-        </div>
+        
 
       ) : (
 
