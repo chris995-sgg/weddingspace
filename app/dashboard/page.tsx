@@ -119,7 +119,7 @@ export default function DashboardPage() {
     <div className="flex justify-between items-center mb-10">
 
       <div>
-        <h1 className="text-4xl font-bold text-[#3b3128]">
+        <h1 className="text-3xl font-bold text-[#3b3128]">
           WeddingSpace
         </h1>
 
@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
       <button
         onClick={logout}
-        className="bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+        className="bg-white/50 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
       >
         Logout
       </button>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
           Meine Events
         </h2>
 
-        <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40 flex flex-col gap-4">
+        <div className="bg-white/50 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40 flex flex-col gap-4">
 
           <input
             value={newWeddingTitle}
@@ -153,7 +153,7 @@ export default function DashboardPage() {
               setNewWeddingTitle(e.target.value)
             }
             placeholder="Name des Events"
-            className="bg-white/60 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+            className="bg-white/65 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
           />
 
           <button
@@ -179,7 +179,7 @@ export default function DashboardPage() {
           {weddings.map((wedding) => (
             <div
               key={wedding.id}
-              className="bg-white/60 backdrop-blur-xl rounded-[1.5rem] p-5 shadow-xl border border-white/50 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
+              className="bg-white/50 backdrop-blur-xl rounded-[1.5rem] p-5 shadow-xl border border-white/50 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
             >
 
               <div>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
 
                   <a
                     href={`/dashboard/wedding/${wedding.id}`}
-                    className="bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-lg border border-white/40 hover:bg-white/80 transition"
+                    className="bg-white/65 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-lg border border-white/40 hover:bg-white/80 transition"
                   >
                     Bearbeiten
                   </a>
