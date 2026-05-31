@@ -9,6 +9,7 @@ type UploadReportItem = {
   tokenSource: string;
   durationMs: number;
   success: boolean;
+  error?: string;
 };
 
 export default function UploadPage() {
@@ -95,65 +96,63 @@ const report: UploadReportItem[] = [];
 
       await Promise.all(
         preparedBatch.map(async (file, index) => {
-          const uploadData =
-            uploadLinksData.uploads[index];
-            const fileStart = performance.now();
+          
+        try {
+  const uploadData = uploadLinksData.uploads[index];
+  const fileStart = performance.now();
 
-          const uploadResponse = await fetch(
-            uploadData.uploadLink,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/octet-stream",
-              },
-              body: file,
-            }
-          );
+  const uploadResponse = await fetch(uploadData.uploadLink, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+    },
+    body: file,
+  });
 
-          if (!uploadResponse.ok) {
-            throw new Error(
-              "Dropbox Upload fehlgeschlagen"
-            );
-          }
+  if (!uploadResponse.ok) {
+    throw new Error("Dropbox Upload fehlgeschlagen");
+  }
 
-          const completeResponse = await fetch(
-            "/api/complete-upload",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                weddingId,
-                guestName,
-                fileName: uploadData.fileName,
-                dropboxPath: uploadData.dropboxPath,
-                sizeBytes: file.size,
-              }),
-            }
-          );
+  const completeResponse = await fetch("/api/complete-upload", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      weddingId,
+      guestName,
+      fileName: uploadData.fileName,
+      dropboxPath: uploadData.dropboxPath,
+      sizeBytes: file.size,
+    }),
+  });
 
-          const completeData =
-            await completeResponse.json();
+  const completeData = await completeResponse.json();
 
-          if (!completeResponse.ok) {
-            throw new Error(
-              completeData.error ||
-                "Upload Abschluss fehlgeschlagen"
-            );
-          }
-const fileEnd = performance.now();
+  if (!completeResponse.ok) {
+    throw new Error(
+      completeData.error || "Upload Abschluss fehlgeschlagen"
+    );
+  }
 
-report.push({
-  fileName: uploadData.fileName,
-  tokenSource: uploadData.tokenSource || "unbekannt",
-  durationMs: Math.round(fileEnd - fileStart),
-  success: true,
-});
+  report.push({
+    fileName: uploadData.fileName,
+    tokenSource: uploadData.tokenSource || "unbekannt",
+    durationMs: Math.round(performance.now() - fileStart),
+    success: true,
+  });
 
-          setUploadedCount((prev) => prev + 1);
+  setUploadedCount((prev) => prev + 1);
+} catch (error: any) {
+  report.push({
+    fileName: file.name,
+    tokenSource: "unbekannt",
+    durationMs: 0,
+    success: false,
+    error: error.message || "Unbekannter Fehler",
+  });
+}
+
         })
       );
 
@@ -170,7 +169,14 @@ setTotalUploadDurationMs(
 
 setUploadReport(report);
 
-    alert("Fotos erfolgreich hochgeladen!");
+   const failedCount = report.filter((item) => !item.success).length;
+
+if (failedCount > 0) {
+  alert(`${failedCount} Foto(s) konnten nicht hochgeladen werden.`);
+} else {
+  alert("Fotos erfolgreich hochgeladen!");
+}
+
     setFiles([]);
     setGuestName("");
   } catch (error: any) {
@@ -211,6 +217,19 @@ setUploadReport(report);
           </p>
 
           <p>
+            Status:{" "}
+            <strong>
+              {item.success ? "Erfolgreich" : "Fehlgeschlagen"}
+            </strong>
+          </p>
+
+          {item.error && (
+            <p className="text-red-600">
+              Fehler: {item.error}
+            </p>
+          )}
+
+          <p>
             Token:{" "}
             <strong>
               {item.tokenSource === "cache"
@@ -234,7 +253,6 @@ setUploadReport(report);
     </div>
   </div>
 )}
-
 
 
       <Link
