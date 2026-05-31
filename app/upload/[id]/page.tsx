@@ -308,7 +308,7 @@ if (failedCount > 0) {
         ← Zurück zum Dashboard
       </Link>
 
-      <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+      <div className="w-full max-w-md bg-white/60 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
         <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
           Foto hochladen
         </h1>

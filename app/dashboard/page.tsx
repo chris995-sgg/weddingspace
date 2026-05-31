@@ -145,7 +145,7 @@ export default function DashboardPage() {
           Meine Events
         </h2>
 
-        <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40 flex flex-col gap-4">
+        <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40 flex flex-col gap-4">
 
           <input
             value={newWeddingTitle}
@@ -153,7 +153,7 @@ export default function DashboardPage() {
               setNewWeddingTitle(e.target.value)
             }
             placeholder="Name des Events"
-            className="bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+            className="bg-white/60 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
           />
 
           <button
