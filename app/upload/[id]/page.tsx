@@ -49,7 +49,7 @@ async function uploadToDropboxWithRetries(
 
     if (attempt < 5) {
       await new Promise((resolve) =>
-        setTimeout(resolve, 200)
+        setTimeout(resolve, 100)
       );
     }
   }
@@ -76,7 +76,7 @@ const totalStart = performance.now();
 const report: UploadReportItem[] = [];
 
   try {
-    const CONCURRENT_UPLOADS = 15;
+    const CONCURRENT_UPLOADS = 30;
 
     for (
       let i = 0;
@@ -187,7 +187,7 @@ report.push({
   tokenSource: "unbekannt",
   durationMs: 0,
   success: false,
-  attempts: 3,
+  attempts: 5,
   error: error.message || "Unbekannter Fehler",
 });
 }
