@@ -31,7 +31,7 @@ async function uploadToDropboxWithRetries(
   uploadLink: string,
   file: File
 ) {
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     const response = await fetch(uploadLink, {
       method: "POST",
       headers: {
@@ -47,7 +47,7 @@ async function uploadToDropboxWithRetries(
       };
     }
 
-    if (attempt < 3) {
+    if (attempt < 5) {
       await new Promise((resolve) =>
         setTimeout(resolve, 200)
       );
@@ -56,7 +56,7 @@ async function uploadToDropboxWithRetries(
 
   return {
     success: false,
-    attempts: 3,
+    attempts: 5,
   };
 }
 
