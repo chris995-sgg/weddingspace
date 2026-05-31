@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
     </div>
 
-    <div className="bg-white/30 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+  
 
       <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-8">
 
@@ -145,7 +145,7 @@ export default function DashboardPage() {
           Meine Events
         </h2>
 
-        <div className="flex flex-col md:flex-row gap-2">
+        <div className="bg-red-500 p-10">
 
           <input
             value={newWeddingTitle}
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           </button>
 
         </div>
-      </div>
+    
 
       {weddings.length === 0 ? (
         <p className="text-[#6b5c4d]">
