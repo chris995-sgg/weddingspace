@@ -382,13 +382,15 @@ return (
     Foto hochladen
   </Link>
 
- <div className="mb-8"></div>
 
 </div>
 
         </div>
 
       </div>
+
+      
+ <div className="mb-8"></div>
 
       {photos.length === 0 ? (
 
