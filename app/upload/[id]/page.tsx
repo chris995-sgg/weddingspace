@@ -76,7 +76,7 @@ const totalStart = performance.now();
 const report: UploadReportItem[] = [];
 
   try {
-    const CONCURRENT_UPLOADS = 30;
+    const CONCURRENT_UPLOADS = 10;
 
     for (
       let i = 0;
@@ -92,7 +92,7 @@ const report: UploadReportItem[] = [];
         batch.map(async (file) => {
           let uploadFile = file;
 
-          if (file.size > 5 * 1024 * 1024) {
+          if (file.size > 10 * 1024 * 1024) {
             uploadFile = await imageCompression(file, {
               maxSizeMB: 5,
               useWebWorker: true,
@@ -195,9 +195,9 @@ report.push({
         })
       );
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 50)
-      );
+      //await new Promise((resolve) =>
+       // setTimeout(resolve, 50)
+     // );
     }
 
     const totalEnd = performance.now();
