@@ -145,7 +145,7 @@ export default function DashboardPage() {
     Meine Events
   </h2>
 
-  <div className="bg-white/50 backdrop-blur-xl rounded-[1.5rem] p-8 shadow-2xl border border-white/40">
+  <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-8 shadow-2xl border border-white/40">
 
     <div className="flex flex-col md:flex-row gap-4">
 
@@ -173,7 +173,7 @@ export default function DashboardPage() {
   </div>
     
  <div className="mb-8"></div>
- 
+
       {weddings.length === 0 ? (
         <p className="text-[#6b5c4d]">
           Du hast noch kein Event erstellt.
@@ -184,7 +184,7 @@ export default function DashboardPage() {
           {weddings.map((wedding) => (
             <div
               key={wedding.id}
-              className="bg-white/50 backdrop-blur-xl rounded-[1.5rem] p-5 shadow-xl border border-white/50 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
+              className="bg-white/50 backdrop-blur rounded-[1.5rem] p-5 shadow-xl border border-white/50 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
             >
 
               <div>
