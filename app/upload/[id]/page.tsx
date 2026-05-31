@@ -9,6 +9,7 @@ type UploadReportItem = {
   tokenSource: string;
   durationMs: number;
   success: boolean;
+  attempts: number;
   error?: string;
 };
 
@@ -24,6 +25,41 @@ export default function UploadPage() {
 
   const [totalUploadDurationMs, setTotalUploadDurationMs] =
   useState<number | null>(null);
+
+
+async function uploadToDropboxWithRetries(
+  uploadLink: string,
+  file: File
+) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const response = await fetch(uploadLink, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
+      body: file,
+    });
+
+    if (response.ok) {
+      return {
+        success: true,
+        attempts: attempt,
+      };
+    }
+
+    if (attempt < 3) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500)
+      );
+    }
+  }
+
+  return {
+    success: false,
+    attempts: 3,
+  };
+}
+
 
  async function uploadPhoto() {
   if (files.length === 0) {
@@ -101,17 +137,17 @@ const report: UploadReportItem[] = [];
   const uploadData = uploadLinksData.uploads[index];
   const fileStart = performance.now();
 
-  const uploadResponse = await fetch(uploadData.uploadLink, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/octet-stream",
-    },
-    body: file,
-  });
+const uploadResult =
+  await uploadToDropboxWithRetries(
+    uploadData.uploadLink,
+    file
+  );
 
-  if (!uploadResponse.ok) {
-    throw new Error("Dropbox Upload fehlgeschlagen");
-  }
+if (!uploadResult.success) {
+  throw new Error(
+    `Dropbox Upload nach ${uploadResult.attempts} Versuchen fehlgeschlagen`
+  );
+}
 
   const completeResponse = await fetch("/api/complete-upload", {
     method: "POST",
@@ -135,22 +171,25 @@ const report: UploadReportItem[] = [];
     );
   }
 
-  report.push({
-    fileName: uploadData.fileName,
-    tokenSource: uploadData.tokenSource || "unbekannt",
-    durationMs: Math.round(performance.now() - fileStart),
-    success: true,
-  });
+report.push({
+  fileName: uploadData.fileName,
+  tokenSource: uploadData.tokenSource || "unbekannt",
+  durationMs: Math.round(performance.now() - fileStart),
+  success: true,
+  attempts: uploadResult.attempts,
+});
 
   setUploadedCount((prev) => prev + 1);
 } catch (error: any) {
-  report.push({
-    fileName: file.name,
-    tokenSource: "unbekannt",
-    durationMs: 0,
-    success: false,
-    error: error.message || "Unbekannter Fehler",
-  });
+
+report.push({
+  fileName: file.name,
+  tokenSource: "unbekannt",
+  durationMs: 0,
+  success: false,
+  attempts: 3,
+  error: error.message || "Unbekannter Fehler",
+});
 }
 
         })
@@ -241,6 +280,13 @@ if (failedCount > 0) {
                 : "unbekannt"}
             </strong>
           </p>
+
+          <p>
+  Versuche:{" "}
+  <strong>
+    {item.attempts}
+  </strong>
+</p>
 
           <p>
             Upload-Zeit:{" "}
