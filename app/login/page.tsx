@@ -122,7 +122,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6 relative text-[#3b3128]">
 
-  <div className="w-full max-w-md bg-white/55 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+  <div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
 
     <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
       WeddingSpace

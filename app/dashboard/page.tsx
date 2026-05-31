@@ -155,7 +155,7 @@ export default function DashboardPage() {
           setNewWeddingTitle(e.target.value)
         }
         placeholder="Name des Events"
-        className="flex-1 bg-white/65 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+        className="flex-1 bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
       />
 
       <button
@@ -212,7 +212,7 @@ export default function DashboardPage() {
 
                   <a
                     href={`/dashboard/wedding/${wedding.id}`}
-                    className="bg-white/65 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-lg border border-white/40 hover:bg-white/80 transition"
+                    className="bg-white/70 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-lg border border-white/40 hover:bg-white/80 transition"
                   >
                     Bearbeiten
                   </a>
