@@ -145,7 +145,7 @@ export default function DashboardPage() {
           Meine Events
         </h2>
 
-        <div className="bg-white/35 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40">
+        <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40 flex flex-col gap-4">
 
           <input
             value={newWeddingTitle}
