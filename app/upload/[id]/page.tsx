@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import imageCompression from "browser-image-compression";
+type UploadReportItem = {
+  fileName: string;
+  tokenSource: string;
+  durationMs: number;
+  success: boolean;
+};
 
 export default function UploadPage() {
   const params = useParams();
@@ -13,6 +19,10 @@ export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
+  const [uploadReport, setUploadReport] = useState<UploadReportItem[]>([]);
+
+  const [totalUploadDurationMs, setTotalUploadDurationMs] =
+  useState<number | null>(null);
 
  async function uploadPhoto() {
   if (files.length === 0) {
@@ -22,6 +32,11 @@ export default function UploadPage() {
 
   setLoading(true);
   setUploadedCount(0);
+  setUploadReport([]);
+  setTotalUploadDurationMs(null);
+
+const totalStart = performance.now();
+const report: UploadReportItem[] = [];
 
   try {
     const CONCURRENT_UPLOADS = 3;
@@ -82,6 +97,7 @@ export default function UploadPage() {
         preparedBatch.map(async (file, index) => {
           const uploadData =
             uploadLinksData.uploads[index];
+            const fileStart = performance.now();
 
           const uploadResponse = await fetch(
             uploadData.uploadLink,
@@ -128,6 +144,14 @@ export default function UploadPage() {
                 "Upload Abschluss fehlgeschlagen"
             );
           }
+const fileEnd = performance.now();
+
+report.push({
+  fileName: uploadData.fileName,
+  tokenSource: uploadData.tokenSource || "unbekannt",
+  durationMs: Math.round(fileEnd - fileStart),
+  success: true,
+});
 
           setUploadedCount((prev) => prev + 1);
         })
@@ -137,6 +161,14 @@ export default function UploadPage() {
         setTimeout(resolve, 50)
       );
     }
+
+    const totalEnd = performance.now();
+
+setTotalUploadDurationMs(
+  Math.round(totalEnd - totalStart)
+);
+
+setUploadReport(report);
 
     alert("Fotos erfolgreich hochgeladen!");
     setFiles([]);
@@ -151,6 +183,60 @@ export default function UploadPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
+
+
+{uploadReport.length > 0 && (
+  <div className="fixed bottom-6 right-6 z-50 max-w-md max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
+    <h2 className="font-bold text-lg mb-3">
+      Upload-Auswertung
+    </h2>
+
+    {totalUploadDurationMs !== null && (
+      <p className="mb-3">
+        Gesamtzeit:{" "}
+        <strong>
+          {(totalUploadDurationMs / 1000).toFixed(2)} s
+        </strong>
+      </p>
+    )}
+
+    <div className="space-y-3">
+      {uploadReport.map((item, index) => (
+        <div
+          key={`${item.fileName}-${index}`}
+          className="border-b border-[#ddd] pb-2"
+        >
+          <p className="font-semibold">
+            {item.fileName}
+          </p>
+
+          <p>
+            Token:{" "}
+            <strong>
+              {item.tokenSource === "cache"
+                ? "aus Cache"
+                : item.tokenSource === "new"
+                ? "neu generiert"
+                : item.tokenSource === "refreshed"
+                ? "erneuert nach 401"
+                : "unbekannt"}
+            </strong>
+          </p>
+
+          <p>
+            Upload-Zeit:{" "}
+            <strong>
+              {(item.durationMs / 1000).toFixed(2)} s
+            </strong>
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
+
       <Link
         href="/dashboard"
         className="absolute top-6 left-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"

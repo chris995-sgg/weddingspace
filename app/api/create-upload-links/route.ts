@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore";
 
 let cachedDropboxToken: string | null = null;
+let lastTokenSource: "cache" | "new" | "refreshed" = "new";
 
 function clearDropboxTokenCache() {
   cachedDropboxToken = null;
@@ -14,7 +15,8 @@ function clearDropboxTokenCache() {
 
 async function getDropboxAccessToken() {
 
-  if (cachedDropboxToken) {
+ if (cachedDropboxToken) {
+  lastTokenSource = "cache";
   return cachedDropboxToken;
 }
   
@@ -67,7 +69,8 @@ async function getDropboxAccessToken() {
     );
   }
 
-  cachedDropboxToken = data.access_token;
+cachedDropboxToken = data.access_token;
+lastTokenSource = "new";
 
 return cachedDropboxToken;
 }
@@ -89,6 +92,7 @@ async function fetchDropbox(
 
   if (response.status === 401) {
     clearDropboxTokenCache();
+    lastTokenSource = "refreshed";
 
     token =
       await getDropboxAccessToken();
@@ -221,11 +225,13 @@ const uploads = await Promise.all(
       throw new Error("Upload-Link konnte nicht erstellt werden");
     }
 
-    return {
-      uploadLink: data.link,
-      dropboxPath,
-      fileName: safeFileName,
-    };
+   return {
+  uploadLink: data.link,
+  dropboxPath,
+  fileName: safeFileName,
+  tokenSource: lastTokenSource,
+};
+   
   })
 );
 
