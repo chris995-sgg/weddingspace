@@ -49,7 +49,7 @@ async function uploadToDropboxWithRetries(
 
     if (attempt < 3) {
       await new Promise((resolve) =>
-        setTimeout(resolve, 500)
+        setTimeout(resolve, 200)
       );
     }
   }
@@ -76,7 +76,7 @@ const totalStart = performance.now();
 const report: UploadReportItem[] = [];
 
   try {
-    const CONCURRENT_UPLOADS = 5;
+    const CONCURRENT_UPLOADS = 10;
 
     for (
       let i = 0;
