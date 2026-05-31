@@ -390,13 +390,15 @@ return (
 
       {photos.length === 0 ? (
 
-        
+        <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-8 shadow-2xl border border-white/50 text-center">
+          <div className="mb-8">
 
           <p className="text-[#6b5c4d]">
             Noch keine Fotos hochgeladen.
           </p>
 
-        
+        </div>
+         </div>
 
       ) : (
 
