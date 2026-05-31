@@ -139,34 +139,38 @@ export default function DashboardPage() {
 
   
 
-      <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-8">
+ <div className="mb-8">
 
-        <h2 className="text-2xl font-bold text-[#3b3128]">
-          Meine Events
-        </h2>
+  <h2 className="text-2xl font-bold text-[#3b3128] mb-4">
+    Meine Events
+  </h2>
 
-        <div className="bg-white/50 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40 flex flex-col gap-4">
+  <div className="bg-white/50 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/40">
 
-          <input
-            value={newWeddingTitle}
-            onChange={(e) =>
-              setNewWeddingTitle(e.target.value)
-            }
-            placeholder="Name des Events"
-            className="bg-white/65 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
-          />
+    <div className="flex flex-col md:flex-row gap-4">
 
-          <button
-            onClick={createWedding}
-            disabled={loading}
-            className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
-          >
-            {loading
-              ? "Erstelle..."
-              : "Neues Event erstellen"}
-          </button>
+      <input
+        value={newWeddingTitle}
+        onChange={(e) =>
+          setNewWeddingTitle(e.target.value)
+        }
+        placeholder="Name des Events"
+        className="flex-1 bg-white/65 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      />
 
-        </div>
+      <button
+        onClick={createWedding}
+        disabled={loading}
+        className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
+      >
+        {loading
+          ? "Erstelle..."
+          : "Neues Event erstellen"}
+      </button>
+
+    </div>
+
+  </div>
     
 
       {weddings.length === 0 ? (
