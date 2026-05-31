@@ -382,6 +382,8 @@ return (
     Foto hochladen
   </Link>
 
+ <div className="mb-8"></div>
+
 </div>
 
         </div>
@@ -391,7 +393,7 @@ return (
       {photos.length === 0 ? (
 
       <div className="mb-8">
-        <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-8 shadow-2xl border border-white/50 text-center">
+        <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-6 shadow-2xl border border-white/50 text-center">
     
 
           <p className="text-[#6b5c4d]">
