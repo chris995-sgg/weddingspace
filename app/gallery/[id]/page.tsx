@@ -29,6 +29,7 @@ export default function GalleryPage() {
 
   const [visibleCount, setVisibleCount] = useState(0);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [eventTitle, setEventTitle] = useState("");
   const [selectedPhoto, setSelectedPhoto] =
     useState<Photo | null>(null);
   const [selectedPhotoIds, setSelectedPhotoIds] =
@@ -161,6 +162,8 @@ useEffect(() => {
     if (!snapshot.exists()) return;
 
     const data = snapshot.data();
+
+    setEventTitle(data.title || "Galerie");
 
     setGalleryVisibilityMode(
       data.galleryVisibilityMode || "instant"
@@ -314,9 +317,15 @@ useEffect(() => {
 
         <div className="bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 className="text-3xl font-bold text-center text-[#3b3128]">
-              WeddingSpace Galerie
-            </h1>
+          <div className="text-center">
+          <h1 className="text-3xl font-bold text-[#3b3128]">
+            {eventTitle}
+          </h1>
+
+  <p className="text-[#6b5c4d] font-semibold mt-1">
+    Galerie
+  </p>
+</div>
 
             <div className="flex flex-col md:flex-row gap-3">
               <button

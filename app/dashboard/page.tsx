@@ -142,7 +142,7 @@ export default function DashboardPage() {
           WeddingSpace
         </h1>
 
-        <p className="text-[#6b5c4d] mt-2">
+        <p className="text-[#6b5c4d]">
           Eingeloggt als {user?.email}
         </p>
       </div>
