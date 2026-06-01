@@ -32,6 +32,7 @@ export default function GalleryPage() {
   const [selectedPhotoIds, setSelectedPhotoIds] =
     useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
+  const [showInitialLoader, setShowInitialLoader] = useState(true);
 
   const [galleryVisibilityMode, setGalleryVisibilityMode] =
   useState<"instant" | "date">("instant");
@@ -49,6 +50,14 @@ const [now, setNow] = useState(new Date());
   galleryVisibilityMode === "date" &&
   galleryRevealAt !== null &&
   now < galleryRevealAt;
+
+  useEffect(() => {
+  const timeout = setTimeout(() => {
+    setShowInitialLoader(false);
+  }, 4000);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   const galleryRevealDateText = galleryRevealAt
   ? galleryRevealAt.toLocaleString("de-DE", {
@@ -271,6 +280,16 @@ useEffect(() => {
 
   return (
   <main className="min-h-screen flex items-start md:items-center justify-center pt-48 md:pt-6 p-6 relative text-black">
+      {showInitialLoader && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-md text-[#3b3128]">
+          <div className="h-14 w-14 rounded-full border-4 border-[#d4b06a] border-t-transparent animate-spin mb-5"></div>
+
+          <p className="text-lg font-bold">
+            Galerie wird geladen...
+          </p>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         <Link
           href="/dashboard"

@@ -160,7 +160,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
 
     <Link
       href="/dashboard"
-      className="absolute top-6 left-6 z-50 bg-white/70 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+      className="absolute top-6 left-6 z-50 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
     >
       ← Zurück zum Dashboard
 </Link>
@@ -191,7 +191,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
 
       </div>
 
-<div className="mb-6 bg-white/50 rounded-[1.5rem] p-5 border border-white/50 shadow-xl">
+<div className="mb-6 bg-white/50 rounded-[1.5rem] p-4 md:p-5 border border-white/50 shadow-xl overflow-hidden">
   <h2 className="text-xl font-bold mb-2 text-[#3b3128]">
     Galerie-Sichtbarkeit
   </h2>
@@ -233,12 +233,14 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
         Bilder sichtbar ab
       </label>
 
-    <input
-      type="datetime-local"
-      value={galleryRevealAt}
-      onChange={(e) => setGalleryRevealAt(e.target.value)}
-      className="w-full max-w-[260px] md:max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
-    />
+  <div className="w-full flex justify-start">
+  <input
+    type="datetime-local"
+    value={galleryRevealAt}
+    onChange={(e) => setGalleryRevealAt(e.target.value)}
+    className="w-[240px] md:w-full max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
+  />
+</div>
     </div>
   )}
 </div>
