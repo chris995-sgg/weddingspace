@@ -270,7 +270,7 @@ useEffect(() => {
   }
 
   return (
-  <main className="min-h-screen flex items-start md:items-center justify-center pt-40 md:pt-6 p-6 relative text-black">
+  <main className="min-h-screen flex items-start md:items-center justify-center pt-48 md:pt-6 p-6 relative text-black">
       <div className="max-w-7xl mx-auto">
         <Link
           href="/dashboard"

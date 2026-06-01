@@ -233,12 +233,12 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
         Bilder sichtbar ab
       </label>
 
-      <input
-        type="datetime-local"
-        value={galleryRevealAt}
-        onChange={(e) => setGalleryRevealAt(e.target.value)}
-        className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] outline-none focus:ring-2 focus:ring-[#d4b06a]"
-      />
+    <input
+      type="datetime-local"
+      value={galleryRevealAt}
+      onChange={(e) => setGalleryRevealAt(e.target.value)}
+      className="w-full max-w-full min-w-0 bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
+    />
     </div>
   )}
 </div>
