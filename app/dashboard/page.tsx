@@ -132,7 +132,7 @@ export default function DashboardPage() {
     }
 
   return (
-    <main className="min-h-screen px-6 pt-10 pb-6 relative text-[#3b3128]">
+    <main className="min-h-screen px-6 pt-16 pb-6 relative text-[#3b3128]">
     <div className="max-w-5xl mx-auto">
 
     <div className="flex justify-between items-center mb-10">
@@ -218,7 +218,7 @@ export default function DashboardPage() {
 
               <div className="flex flex-col md:flex-row items-center gap-4">
 
-                <div className="bg-white/80 p-2 rounded-2xl shadow-lg border border-white/60">
+              
 
               <button
                 type="button"
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                 />
               </button>
 
-                </div>
+          
 
                 <div className="flex flex-wrap gap-2 justify-center">
 
