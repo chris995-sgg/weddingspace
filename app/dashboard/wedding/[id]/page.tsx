@@ -2,13 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  Timestamp,
+} from "firebase/firestore";
+
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Wedding = {
   title: string;
   ownerEmail?: string;
+  galleryVisibilityMode?: "instant" | "date";
+  galleryRevealAt?: {
+    toDate: () => Date;
+  } | null;
 };
 
 export default function WeddingPage() {
@@ -16,10 +27,15 @@ export default function WeddingPage() {
   const weddingId = params.id as string;
   const router = useRouter();
 
-  const [wedding, setWedding] = useState<Wedding | null>(null);
-  const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+const [wedding, setWedding] = useState<Wedding | null>(null);
+const [title, setTitle] = useState("");
+const [loading, setLoading] = useState(true);
+const [saving, setSaving] = useState(false);
+
+const [galleryVisibilityMode, setGalleryVisibilityMode] =
+  useState<"instant" | "date">("instant");
+
+const [galleryRevealAt, setGalleryRevealAt] = useState("");
 
   useEffect(() => {
     async function loadWedding() {
@@ -27,11 +43,28 @@ export default function WeddingPage() {
         const docRef = doc(db, "weddings", weddingId);
         const snapshot = await getDoc(docRef);
 
-        if (snapshot.exists()) {
-          const data = snapshot.data() as Wedding;
-          setWedding(data);
-          setTitle(data.title);
-        }
+       if (snapshot.exists()) {
+  const data = snapshot.data() as Wedding;
+
+  setWedding(data);
+  setTitle(data.title);
+
+  setGalleryVisibilityMode(
+    data.galleryVisibilityMode || "instant"
+  );
+
+  if (data.galleryRevealAt?.toDate) {
+    const date = data.galleryRevealAt.toDate();
+
+    const localDate = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60000
+    )
+      .toISOString()
+      .slice(0, 16);
+
+    setGalleryRevealAt(localDate);
+  }
+}
       } catch (error) {
         console.error(error);
       }
@@ -42,33 +75,49 @@ export default function WeddingPage() {
     loadWedding();
   }, [weddingId]);
 
-  async function saveTitle() {
-    if (!title.trim()) {
-      alert("Bitte gib einen Namen ein.");
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const docRef = doc(db, "weddings", weddingId);
-
-      await updateDoc(docRef, {
-        title: title.trim(),
-      });
-
-      setWedding((prev) =>
-        prev ? { ...prev, title: title.trim() } : prev
-      );
-
-      alert("Name gespeichert!");
-    } catch (error) {
-      console.error(error);
-      alert("Name konnte nicht gespeichert werden.");
-    }
-
-    setSaving(false);
+ async function saveTitle() {
+  if (!title.trim()) {
+    alert("Bitte gib einen Namen ein.");
+    return;
   }
+
+  if (galleryVisibilityMode === "date" && !galleryRevealAt) {
+    alert("Bitte wähle ein Datum aus.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const docRef = doc(db, "weddings", weddingId);
+
+    await updateDoc(docRef, {
+      title: title.trim(),
+      galleryVisibilityMode,
+      galleryRevealAt:
+        galleryVisibilityMode === "date"
+          ? Timestamp.fromDate(new Date(galleryRevealAt))
+          : null,
+    });
+
+    setWedding((prev) =>
+      prev
+        ? {
+            ...prev,
+            title: title.trim(),
+            galleryVisibilityMode,
+          }
+        : prev
+    );
+
+    alert("Einstellungen gespeichert!");
+  } catch (error) {
+    console.error(error);
+    alert("Einstellungen konnten nicht gespeichert werden.");
+  }
+
+  setSaving(false);
+}
 
   async function deleteEvent() {
   const confirmed = confirm(
@@ -142,12 +191,64 @@ export default function WeddingPage() {
 
       </div>
 
+<div className="mb-6 bg-white/50 rounded-[1.5rem] p-5 border border-white/50 shadow-xl">
+  <h2 className="text-xl font-bold mb-2 text-[#3b3128]">
+    Galerie-Sichtbarkeit
+  </h2>
+
+  <p className="text-[#6b5c4d] mb-5 text-sm">
+    Lege fest, ob Gäste die hochgeladenen Bilder sofort sehen können
+    oder erst ab einem bestimmten Datum.
+  </p>
+
+  <div className="space-y-4">
+    <label className="flex items-center gap-3 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer">
+      <input
+        type="radio"
+        checked={galleryVisibilityMode === "instant"}
+        onChange={() => setGalleryVisibilityMode("instant")}
+      />
+
+      <span className="font-semibold text-[#3b3128]">
+        Bilder sofort sichtbar
+      </span>
+    </label>
+
+    <label className="flex items-center gap-3 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer">
+      <input
+        type="radio"
+        checked={galleryVisibilityMode === "date"}
+        onChange={() => setGalleryVisibilityMode("date")}
+      />
+
+      <span className="font-semibold text-[#3b3128]">
+        Bilder erst ab Datum sichtbar
+      </span>
+    </label>
+  </div>
+
+  {galleryVisibilityMode === "date" && (
+    <div className="mt-5">
+      <label className="block mb-2 text-sm text-[#6b5c4d]">
+        Bilder sichtbar ab
+      </label>
+
+      <input
+        type="datetime-local"
+        value={galleryRevealAt}
+        onChange={(e) => setGalleryRevealAt(e.target.value)}
+        className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      />
+    </div>
+  )}
+</div>
+
       <button
         onClick={saveTitle}
         disabled={saving}
         className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
       >
-        {saving ? "Speichert..." : "Namen speichern"}
+      {saving ? "Speichert..." : "Einstellungen speichern"}
       </button>
 
       <button

@@ -4,14 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import imageCompression from "browser-image-compression";
-type UploadReportItem = {
-  fileName: string;
-  tokenSource: string;
-  durationMs: number;
-  success: boolean;
-  attempts: number;
-  error?: string;
-};
 
 export default function UploadPage() {
   const params = useParams();
@@ -21,294 +13,186 @@ export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
-  const [uploadReport, setUploadReport] = useState<UploadReportItem[]>([]);
 
-  const [totalUploadDurationMs, setTotalUploadDurationMs] =
-  useState<number | null>(null);
+  async function uploadToDropboxWithRetries(
+    uploadLink: string,
+    file: File
+  ) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      const response = await fetch(uploadLink, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
+        body: file,
+      });
 
+      if (response.ok) {
+        return true;
+      }
 
-async function uploadToDropboxWithRetries(
-  uploadLink: string,
-  file: File
-) {
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    const response = await fetch(uploadLink, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-      body: file,
-    });
-
-    if (response.ok) {
-      return {
-        success: true,
-        attempts: attempt,
-      };
+      if (attempt < 5) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 100)
+        );
+      }
     }
 
-    if (attempt < 5) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, 100)
-      );
+    return false;
+  }
+
+  async function uploadPhoto() {
+    if (files.length === 0) {
+      alert("Bitte wähle mindestens ein Foto aus.");
+      return;
     }
-  }
 
-  return {
-    success: false,
-    attempts: 5,
-  };
-}
+    setLoading(true);
+    setUploadedCount(0);
 
+    const failedUploads: string[] = [];
 
- async function uploadPhoto() {
-  if (files.length === 0) {
-    alert("Bitte wähle mindestens ein Foto aus.");
-    return;
-  }
+    try {
+      const CONCURRENT_UPLOADS = 10;
 
-  setLoading(true);
-  setUploadedCount(0);
-  setUploadReport([]);
-  setTotalUploadDurationMs(null);
+      for (
+        let i = 0;
+        i < files.length;
+        i += CONCURRENT_UPLOADS
+      ) {
+        const batch = files.slice(
+          i,
+          i + CONCURRENT_UPLOADS
+        );
 
-const totalStart = performance.now();
-const report: UploadReportItem[] = [];
+        const preparedBatch = await Promise.all(
+          batch.map(async (file) => {
+            let uploadFile = file;
 
-  try {
-    const CONCURRENT_UPLOADS = 10;
+            if (file.size > 10 * 1024 * 1024) {
+              uploadFile = await imageCompression(file, {
+                maxSizeMB: 5,
+                useWebWorker: true,
+              });
+            }
 
-    for (
-      let i = 0;
-      i < files.length;
-      i += CONCURRENT_UPLOADS
-    ) {
-      const batch = files.slice(
-        i,
-        i + CONCURRENT_UPLOADS
-      );
+            return uploadFile;
+          })
+        );
 
-      const preparedBatch = await Promise.all(
-        batch.map(async (file) => {
-          let uploadFile = file;
-
-          if (file.size > 10 * 1024 * 1024) {
-            uploadFile = await imageCompression(file, {
-              maxSizeMB: 5,
-              useWebWorker: true,
-            });
+        const uploadLinksResponse = await fetch(
+          "/api/create-upload-links",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              weddingId,
+              files: preparedBatch.map((file) => ({
+                fileName: file.name,
+                sizeBytes: file.size,
+              })),
+            }),
           }
+        );
 
-          return uploadFile;
-        })
-      );
+        const uploadLinksData =
+          await uploadLinksResponse.json();
 
-      const uploadLinksResponse = await fetch(
-        "/api/create-upload-links",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            weddingId,
-            files: preparedBatch.map((file) => ({
-              fileName: file.name,
-              sizeBytes: file.size,
-            })),
-          }),
+        if (!uploadLinksResponse.ok) {
+          throw new Error(
+            uploadLinksData.error ||
+              "Upload-Links Fehler"
+          );
         }
-      );
 
-      const uploadLinksData =
-        await uploadLinksResponse.json();
+        await Promise.all(
+          preparedBatch.map(async (file, index) => {
+            try {
+              const uploadData =
+                uploadLinksData.uploads[index];
 
-      if (!uploadLinksResponse.ok) {
-        throw new Error(
-          uploadLinksData.error ||
-            "Upload-Links Fehler"
+              const uploadSuccess =
+                await uploadToDropboxWithRetries(
+                  uploadData.uploadLink,
+                  file
+                );
+
+              if (!uploadSuccess) {
+                throw new Error(
+                  "Dropbox Upload fehlgeschlagen"
+                );
+              }
+
+              const completeResponse = await fetch(
+                "/api/complete-upload",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+                  body: JSON.stringify({
+                    weddingId,
+                    guestName,
+                    fileName: uploadData.fileName,
+                    dropboxPath:
+                      uploadData.dropboxPath,
+                    sizeBytes: file.size,
+                  }),
+                }
+              );
+
+              const completeData =
+                await completeResponse.json();
+
+              if (!completeResponse.ok) {
+                throw new Error(
+                  completeData.error ||
+                    "Upload Abschluss fehlgeschlagen"
+                );
+              }
+
+              setUploadedCount((prev) => prev + 1);
+            } catch (error) {
+              console.error(error);
+              failedUploads.push(file.name);
+            }
+          })
         );
       }
 
-      await Promise.all(
-        preparedBatch.map(async (file, index) => {
-          
-        try {
-  const uploadData = uploadLinksData.uploads[index];
-  const fileStart = performance.now();
+      if (failedUploads.length > 0) {
+        alert(
+          `${failedUploads.length} Foto(s) konnten nicht hochgeladen werden:\n\n${failedUploads.join(
+            "\n"
+          )}`
+        );
+      } else {
+        alert("Fotos erfolgreich hochgeladen!");
+      }
 
-const uploadResult =
-  await uploadToDropboxWithRetries(
-    uploadData.uploadLink,
-    file
-  );
-
-if (!uploadResult.success) {
-  throw new Error(
-    `Dropbox Upload nach ${uploadResult.attempts} Versuchen fehlgeschlagen`
-  );
-}
-
-  const completeResponse = await fetch("/api/complete-upload", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      weddingId,
-      guestName,
-      fileName: uploadData.fileName,
-      dropboxPath: uploadData.dropboxPath,
-      sizeBytes: file.size,
-    }),
-  });
-
-  const completeData = await completeResponse.json();
-
-  if (!completeResponse.ok) {
-    throw new Error(
-      completeData.error || "Upload Abschluss fehlgeschlagen"
-    );
-  }
-
-report.push({
-  fileName: uploadData.fileName,
-  tokenSource: uploadData.tokenSource || "unbekannt",
-  durationMs: Math.round(performance.now() - fileStart),
-  success: true,
-  attempts: uploadResult.attempts,
-});
-
-  setUploadedCount((prev) => prev + 1);
-} catch (error: any) {
-
-report.push({
-  fileName: file.name,
-  tokenSource: "unbekannt",
-  durationMs: 0,
-  success: false,
-  attempts: 5,
-  error: error.message || "Unbekannter Fehler",
-});
-}
-
-        })
-      );
-
-      //await new Promise((resolve) =>
-       // setTimeout(resolve, 50)
-     // );
+      setFiles([]);
+      setGuestName("");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Fehler beim Upload.");
     }
 
-    const totalEnd = performance.now();
-
-setTotalUploadDurationMs(
-  Math.round(totalEnd - totalStart)
-);
-
-setUploadReport(report);
-
-   const failedCount = report.filter((item) => !item.success).length;
-
-if (failedCount > 0) {
-  alert(`${failedCount} Foto(s) konnten nicht hochgeladen werden.`);
-} else {
-  alert("Fotos erfolgreich hochgeladen!");
-}
-
-    setFiles([]);
-    setGuestName("");
-  } catch (error: any) {
-    console.error(error);
-    alert(error.message || "Fehler beim Upload.");
+    setLoading(false);
   }
-
-  setLoading(false);
-}
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
-
-
-{uploadReport.length > 0 && (
-  <div className="fixed bottom-6 right-6 z-50 max-w-md max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
-    <h2 className="font-bold text-lg mb-3">
-      Upload-Auswertung
-    </h2>
-
-    {totalUploadDurationMs !== null && (
-      <p className="mb-3">
-        Gesamtzeit:{" "}
-        <strong>
-          {(totalUploadDurationMs / 1000).toFixed(2)} s
-        </strong>
-      </p>
-    )}
-
-    <div className="space-y-3">
-      {uploadReport.map((item, index) => (
-        <div
-          key={`${item.fileName}-${index}`}
-          className="border-b border-[#ddd] pb-2"
-        >
-          <p className="font-semibold">
-            {item.fileName}
-          </p>
-
-          <p>
-            Status:{" "}
-            <strong>
-              {item.success ? "Erfolgreich" : "Fehlgeschlagen"}
-            </strong>
-          </p>
-
-          {item.error && (
-            <p className="text-red-600">
-              Fehler: {item.error}
-            </p>
-          )}
-
-          <p>
-            Token:{" "}
-            <strong>
-              {item.tokenSource === "cache"
-                ? "aus Cache"
-                : item.tokenSource === "new"
-                ? "neu generiert"
-                : item.tokenSource === "refreshed"
-                ? "erneuert nach 401"
-                : "unbekannt"}
-            </strong>
-          </p>
-
-          <p>
-  Versuche:{" "}
-  <strong>
-    {item.attempts}
-  </strong>
-</p>
-
-          <p>
-            Upload-Zeit:{" "}
-            <strong>
-              {(item.durationMs / 1000).toFixed(2)} s
-            </strong>
-          </p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
-
       <Link
         href="/dashboard"
-        className="absolute top-6 left-6 bg-white/60 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+        className="absolute top-6 left-6 bg-white/60 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
       >
         ← Zurück zum Dashboard
       </Link>
 
-      <div className="w-full max-w-md bg-white/60 backdrop-blur-2xl rounded-[2rem] p-8 shadow-2xl border border-white/50">
+      <div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
         <h1 className="text-4xl font-bold mb-2 text-center text-[#3b3128]">
           Foto hochladen
         </h1>
@@ -336,7 +220,9 @@ if (failedCount > 0) {
             type="file"
             accept="image/*"
             multiple
-            onChange={(e) => setFiles(Array.from(e.target.files || []))}
+            onChange={(e) =>
+              setFiles(Array.from(e.target.files || []))
+            }
             className="hidden"
           />
         </label>
