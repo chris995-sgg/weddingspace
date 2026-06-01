@@ -337,7 +337,7 @@ useEffect(() => {
         downloading ||
         selectedPhotoIds.length === 0
       }
-      className="w-full max-w-md bg-white/50 text-[#3b3128] px-6 py-4 rounded-full font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
+      className="w-full max-w-sm bg-white/70 text-[#3b3128] px-4 py-3 rounded-full font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
     >
       <span className="text-lg leading-none">↓</span>
 
@@ -348,7 +348,7 @@ useEffect(() => {
 
     <Link
       href={`/upload/${weddingId}`}
-      className="w-full max-w-md bg-[#d4b06a] text-white px-5 py-3 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
+      className="w-full max-w-sm bg-[#c8ad72] text-white px-4 py-3 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
     >
       <span className="text-lg leading-none">↑</span>
       Foto hochladen
