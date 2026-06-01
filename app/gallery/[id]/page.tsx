@@ -315,31 +315,31 @@ useEffect(() => {
           </Link>
         )}
 
-   <div className="w-full max-w-4xl mx-auto bg-white/50 backdrop-blur rounded-[2.5rem] px-6 py-12 md:py-16 shadow-2xl border border-white/50 text-center">
+   <div className="w-full max-w-4xl mx-auto bg-white/50 backdrop-blur rounded-[2.0rem] px-6 py-12 md:py-16 shadow-2xl border border-white/50 text-center">
   <div className="mb-8 flex justify-center items-center">
     <div className="w-20 md:w-28 h-px bg-[#c8ad72]"></div>
     <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
     <div className="w-20 md:w-28 h-px bg-[#c8ad72]"></div>
   </div>
 
-  <h1 className="font-elegant text-5xl md:text-7xl font-medium text-[#3b3128] leading-tight tracking-wide">
+  <h1 className="font-elegant text-4xl md:text-5xl font-medium text-[#3b3128] leading-tight tracking-wide">
     {eventTitle}
   </h1>
 
-  <p className="font-elegant text-4xl md:text-6xl font-medium text-[#3b3128] mt-4 mb-10 tracking-wide">
+  <p className="font-elegant text-3xl md:text-4xl font-medium text-[#3b3128] mt-4 mb-8 tracking-wide">
     Galerie
   </p>
 
-  <div className="flex flex-col items-center gap-5">
+  <div className="flex flex-col items-center gap-4 ">
     <button
       onClick={downloadSelectedPhotos}
       disabled={
         downloading ||
         selectedPhotoIds.length === 0
       }
-      className="w-full max-w-md bg-white/60 text-[#3b3128] px-6 py-4 rounded-full font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
+      className="w-full max-w-md bg-white/50 text-[#3b3128] px-6 py-4 rounded-full font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
     >
-      <span className="text-2xl leading-none">↓</span>
+      <span className="text-1xl leading-none">↓</span>
 
       {downloading
         ? "Erstelle ZIP..."
@@ -348,9 +348,9 @@ useEffect(() => {
 
     <Link
       href={`/upload/${weddingId}`}
-      className="w-full max-w-md bg-[#6f8062] text-white px-6 py-4 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
+      className="w-full max-w-md bg-[#d4b06a] text-white px-6 py-4 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
     >
-      <span className="text-2xl leading-none">↑</span>
+      <span className="text-1xl leading-none">↑</span>
       Foto hochladen
     </Link>
   </div>
