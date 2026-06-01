@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f2e8;
+  --background: #ffffff;
   --foreground: #171717;
 }
 
@@ -9,50 +9,32 @@ html,
 body {
   margin: 0;
   padding: 0;
-  width: 100%;
   min-height: 100%;
-  min-height: 100dvh;
-  background-color: #f6f2e8;
-  overscroll-behavior-y: none;
-}
-
-html {
-  background-image: url("/background.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 body {
   color: #111111;
   font-family: Arial, Helvetica, sans-serif;
-  background: transparent;
 }
 
-/* Hintergrund extra groß, damit beim iPhone-Bounce kein Weiß sichtbar wird */
 body::before {
   content: "";
   position: fixed;
-  inset: -120px 0;
+  inset: 0;
   z-index: -1;
-  pointer-events: none;
 
-  background-image: url("/background.png");
+  background: url("/background.png");
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 @media (max-width: 768px) {
-  html {
-    background-position: left top;
-  }
-
   body::before {
     background-position: left top;
-  }
-}
 
+  }}
 * {
   box-sizing: border-box;
 }

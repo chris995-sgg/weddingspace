@@ -315,17 +315,16 @@ useEffect(() => {
           </Link>
         )}
 
-        <div className="bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
+        <div className="mt-12 bg-white/50 backdrop-blur rounded-[1.5rem] p-8 shadow-2xl border border-white/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center">
-          <h1 className="text-3xl font-bold text-[#3b3128]">
-            {eventTitle}
-          </h1>
-
-  <p className="text-[#6b5c4d] font-semibold mt-1">
-    Galerie
-  </p>
-</div>
+         <h1 className="text-3xl font-bold text-[#3b3128]">
+         {eventTitle}
+        </h1>
+        <p className="mt-2 text-2xl font-semibold text-[#6b6258]">
+          Galerie
+        </p>
+        </div>
 
             <div className="flex flex-col md:flex-row gap-3">
               <button
