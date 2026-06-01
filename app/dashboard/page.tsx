@@ -132,8 +132,8 @@ export default function DashboardPage() {
     }
 
   return (
-    <main className="min-h-screen p-6 relative text-[#3b3128]">
-  <div className="max-w-5xl mx-auto">
+    <main className="min-h-screen px-6 pt-10 pb-6 relative text-[#3b3128]">
+    <div className="max-w-5xl mx-auto">
 
     <div className="flex justify-between items-center mb-10">
 
