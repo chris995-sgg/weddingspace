@@ -166,7 +166,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
 </Link>
 
 
-<div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-5 md:p-8 shadow-2xl border border-white/50">
+<div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-5 md:p-8 shadow-lg border border-white/50">
 
       <h1 className="text-4xl font-bold mb-2 text-[#3b3128]">
         Event bearbeiten
@@ -191,7 +191,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
 
       </div>
 
-<div className="mb-6 bg-white/50 rounded-[1.5rem] p-4 md:p-5 border border-white/50 shadow-xl overflow-hidden">
+<div className="mb-6 bg-white/50 rounded-[1.5rem] p-4 md:p-5 border border-white/50 shadow-lg overflow-hidden">
   <h2 className="text-xl font-bold mb-2 text-[#3b3128]">
     Galerie-Sichtbarkeit
   </h2>
@@ -238,7 +238,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
     type="datetime-local"
     value={galleryRevealAt}
     onChange={(e) => setGalleryRevealAt(e.target.value)}
-    className="w-[240px] md:w-full max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
+    className="w-[250px] md:w-full max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
   />
 </div>
     </div>
