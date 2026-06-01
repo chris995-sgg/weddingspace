@@ -50,6 +50,16 @@ const [now, setNow] = useState(new Date());
   galleryRevealAt !== null &&
   now < galleryRevealAt;
 
+  const galleryRevealDateText = galleryRevealAt
+  ? galleryRevealAt.toLocaleString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  : "";
+
   useEffect(() => {
     if (photos.length === 0) {
       setVisibleCount(0);
@@ -260,7 +270,7 @@ useEffect(() => {
   }
 
   return (
-    <main className="min-h-screen pt-24 p-6 relative text-[#3b3128] overflow-x-hidden">
+  <main className="min-h-screen flex items-start md:items-center justify-center pt-40 md:pt-6 p-6 relative text-black">
       <div className="max-w-7xl mx-auto">
         <Link
           href="/dashboard"
@@ -331,14 +341,14 @@ useEffect(() => {
                     }`}
 
                     />
-                    {shouldBlurPhotos && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
-                        <p className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow">
-                          Bald sichtbar
-                        </p>
+                  {shouldBlurPhotos && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+                      <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
+                        <p>Sichtbar ab</p>
+                        <p>{galleryRevealDateText} Uhr</p>
                       </div>
-                    )}
-
+                    </div>
+                  )}
                   </button>
 
                   <button
