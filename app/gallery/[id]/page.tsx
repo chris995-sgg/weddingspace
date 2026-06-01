@@ -54,7 +54,7 @@ const [now, setNow] = useState(new Date());
   useEffect(() => {
   const timeout = setTimeout(() => {
     setShowInitialLoader(false);
-  }, 4000);
+  }, 5000);
 
   return () => clearTimeout(timeout);
 }, []);
@@ -279,7 +279,8 @@ useEffect(() => {
   }
 
   return (
-  <main className="min-h-screen flex items-start md:items-center justify-center pt-48 md:pt-6 p-6 relative text-black">
+  <main className="min-h-screen flex items-start md:items-center justify-center pt-28 md:pt-6 p-6 relative text-black">
+
       {showInitialLoader && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-md text-[#3b3128]">
           <div className="h-14 w-14 rounded-full border-4 border-[#d4b06a] border-t-transparent animate-spin mb-5"></div>
