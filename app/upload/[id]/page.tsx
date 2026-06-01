@@ -42,11 +42,15 @@ export default function UploadPage() {
   }
 
   async function uploadPhoto() {
-    if (files.length === 0) {
-      alert("Bitte wähle mindestens ein Foto aus.");
+    if (!guestName.trim()) {
+      alert("Bitte gib deinen Namen ein.");
       return;
     }
 
+  if (files.length === 0) {
+    alert("Bitte wähle mindestens ein Foto aus.");
+    return;
+  }
     setLoading(true);
     setUploadedCount(0);
 
@@ -200,6 +204,20 @@ export default function UploadPage() {
         <p className="text-center text-[#6b5c4d] mb-8">
           Teile deinen schönsten Moment ✨
         </p>
+
+        <div className="mb-4">
+        <label className="block mb-2 text-sm text-[#6b5c4d]">
+          Dein Name
+        </label>
+
+        <input
+          type="text"
+          value={guestName}
+          onChange={(e) => setGuestName(e.target.value)}
+          placeholder="z. B. Anna"
+          className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+        />
+      </div>
 
         {loading && (
           <p className="mb-4 text-center text-[#6b5c4d] font-semibold">

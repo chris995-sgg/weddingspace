@@ -112,6 +112,25 @@ export default function DashboardPage() {
     setLoading(false);
   }
 
+    async function shareGalleryLink(weddingId: string) {
+      const galleryUrl = `${window.location.origin}/gallery/${weddingId}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "WeddingSpace Galerie",
+            text: "Hier kannst du die Hochzeitsfotos ansehen und hochladen:",
+            url: galleryUrl,
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        await navigator.clipboard.writeText(galleryUrl);
+        alert("Link wurde kopiert.");
+      }
+    }
+
   return (
     <main className="min-h-screen p-6 relative text-[#3b3128]">
   <div className="max-w-5xl mx-auto">
@@ -201,10 +220,17 @@ export default function DashboardPage() {
 
                 <div className="bg-white/80 p-2 rounded-2xl shadow-lg border border-white/60">
 
-                  <QRCodeCanvas
-                    value={`${window.location.origin}/upload/${wedding.id}`}
-                    size={96}
-                  />
+              <button
+                type="button"
+                onClick={() => shareGalleryLink(wedding.id)}
+                className="cursor-pointer hover:scale-105 transition"
+                title="Link teilen"
+              >
+                <QRCodeCanvas
+                  value={`${window.location.origin}/upload/${wedding.id}`}
+                  size={96}
+                />
+              </button>
 
                 </div>
 

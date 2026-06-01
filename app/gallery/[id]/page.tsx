@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+
 
 import {
   collection,
@@ -13,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { useParams } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
 
 type Photo = {
   id: string;
@@ -32,6 +34,7 @@ export default function GalleryPage() {
   const [selectedPhotoIds, setSelectedPhotoIds] =
     useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showInitialLoader, setShowInitialLoader] = useState(true);
 
   const [galleryVisibilityMode, setGalleryVisibilityMode] =
@@ -50,6 +53,14 @@ const [now, setNow] = useState(new Date());
   galleryVisibilityMode === "date" &&
   galleryRevealAt !== null &&
   now < galleryRevealAt;
+
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    setIsLoggedIn(!!user);
+  });
+
+  return () => unsubscribe();
+}, []);
 
   useEffect(() => {
   const timeout = setTimeout(() => {
@@ -292,12 +303,14 @@ useEffect(() => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        <Link
-          href="/dashboard"
-          className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
-        >
-          ← Zurück zum Dashboard
-        </Link>
+        {isLoggedIn && (
+          <Link
+            href="/dashboard"
+            className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+          >
+            ← Zurück zum Dashboard
+          </Link>
+        )}
 
         <div className="bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
