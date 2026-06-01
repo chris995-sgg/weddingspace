@@ -293,7 +293,7 @@ useEffect(() => {
   }
 
   return (
-  <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-6 p-6 relative text-black">
+  <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
 
       {showInitialLoader && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-md text-[#3b3128]">
