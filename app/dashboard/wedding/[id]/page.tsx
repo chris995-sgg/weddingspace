@@ -156,17 +156,17 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
   }
 
   return (
-   <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
+   <main className="min-h-screen flex justify-center p-6 pt-28 md:pt-6 relative text-black">
 
     <Link
-         href="/dashboard"
-         className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
-           >
-         ← Zurück zum Dashboard
-     </Link>
+      href="/dashboard"
+      className="absolute top-6 left-6 z-50 bg-white/70 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+    >
+      ← Zurück zum Dashboard
+</Link>
 
 
-  <div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
+<div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-5 md:p-8 shadow-2xl border border-white/50">
 
       <h1 className="text-4xl font-bold mb-2 text-[#3b3128]">
         Event bearbeiten
@@ -237,7 +237,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
       type="datetime-local"
       value={galleryRevealAt}
       onChange={(e) => setGalleryRevealAt(e.target.value)}
-      className="w-full max-w-full min-w-0 bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      className="w-full max-w-[260px] md:max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
     />
     </div>
   )}
