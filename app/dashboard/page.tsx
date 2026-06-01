@@ -133,6 +133,14 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen px-6 pt-16 pb-6 relative text-[#3b3128]">
+
+         <button
+        onClick={logout}
+        className="bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+      >
+        Logout
+      </button>
+      
     <div className="max-w-5xl mx-auto">
 
     <div className="flex justify-between items-center mb-10">
@@ -147,12 +155,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <button
-        onClick={logout}
-        className="bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
-      >
-        Logout
-      </button>
+   
 
     </div>
 
