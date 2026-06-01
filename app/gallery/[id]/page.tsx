@@ -315,41 +315,46 @@ useEffect(() => {
           </Link>
         )}
 
-       <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-7 md:py-4 shadow-2xl border border-white/50">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-center">
-         <h1 className="text-3xl font-bold text-[#3b3128]">
-         {eventTitle}
-        </h1>
-        <p className="mt-2 text-3xl font-semibold text-[#3b3128]">
-          Galerie
-        </p>
-        </div>
+   <div className="w-full max-w-4xl mx-auto bg-white/50 backdrop-blur rounded-[2.5rem] px-6 py-12 md:py-16 shadow-2xl border border-white/50 text-center">
+  <div className="mb-8 flex justify-center items-center">
+    <div className="w-20 md:w-28 h-px bg-[#c8ad72]"></div>
+    <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
+    <div className="w-20 md:w-28 h-px bg-[#c8ad72]"></div>
+  </div>
 
-            <div className="flex flex-col md:flex-row gap-3">
-              <button
-                onClick={downloadSelectedPhotos}
-                disabled={
-                  downloading ||
-                  selectedPhotoIds.length === 0
-                }
-                className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
-              >
-                {downloading
-                  ? "Erstelle ZIP..."
-                  : `${selectedPhotoIds.length} herunterladen`}
-              </button>
+  <h1 className="font-elegant text-5xl md:text-7xl font-medium text-[#3b3128] leading-tight tracking-wide">
+    {eventTitle}
+  </h1>
 
-              <Link
-                href={`/upload/${weddingId}`}
-                className="bg-[#d4b06a] text-white px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition shadow-lg text-center"
-              >
-                Foto hochladen
-              </Link>
-            </div>
-          </div>
-        </div>
+  <p className="font-elegant text-4xl md:text-6xl font-medium text-[#3b3128] mt-4 mb-10 tracking-wide">
+    Galerie
+  </p>
 
+  <div className="flex flex-col items-center gap-5">
+    <button
+      onClick={downloadSelectedPhotos}
+      disabled={
+        downloading ||
+        selectedPhotoIds.length === 0
+      }
+      className="w-full max-w-md bg-white/60 text-[#3b3128] px-6 py-4 rounded-full font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
+    >
+      <span className="text-2xl leading-none">↓</span>
+
+      {downloading
+        ? "Erstelle ZIP..."
+        : `${selectedPhotoIds.length} herunterladen`}
+    </button>
+
+    <Link
+      href={`/upload/${weddingId}`}
+      className="w-full max-w-md bg-[#6f8062] text-white px-6 py-4 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
+    >
+      <span className="text-2xl leading-none">↑</span>
+      Foto hochladen
+    </Link>
+  </div>
+</div>
         <div className="mb-8"></div>
 
         {photos.length === 0 ? (

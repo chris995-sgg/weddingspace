@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap");
 
 :root {
   --background: #ffffff;
@@ -41,4 +42,7 @@ body::before {
 
 a {
   text-decoration: none;
+}
+.font-elegant {
+  font-family: "Cormorant Garamond", serif;
 }
