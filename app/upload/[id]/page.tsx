@@ -188,7 +188,7 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 relative text-black">
+<main className="min-h-screen flex justify-center items-start pt-24 p-6 relative text-black">
       <Link
         href="/dashboard"
         className="absolute top-6 left-6 bg-white/60 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"

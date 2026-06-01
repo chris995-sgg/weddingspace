@@ -223,7 +223,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => shareGalleryLink(wedding.id)}
-                className="cursor-pointer hover:scale-105 transition"
+                className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center"
                 title="Link teilen"
               >
                 <QRCodeCanvas
