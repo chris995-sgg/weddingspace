@@ -165,7 +165,7 @@ return (
                 setNewWeddingTitle(e.target.value)
               }
               placeholder="Name des Events"
-              className="flex-1 bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+              className="flex-1 bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#c8ad72]"
             />
 
             <button
@@ -226,7 +226,7 @@ return (
 
                     <a
                       href={`/upload/${wedding.id}`}
-                      className="bg-[#d4b06a] text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:opacity-90 transition"
+                      className="bg-[#c8ad72] text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:opacity-90 transition"
                     >
                       Upload
                     </a>

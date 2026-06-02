@@ -297,7 +297,7 @@ useEffect(() => {
 
       {showInitialLoader && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-md text-[#3b3128]">
-          <div className="h-14 w-14 rounded-full border-4 border-[#d4b06a] border-t-transparent animate-spin mb-5"></div>
+          <div className="h-14 w-14 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin mb-5"></div>
 
           <p className="text-lg font-bold">
             Galerie wird geladen...
@@ -339,7 +339,6 @@ useEffect(() => {
       }
       className="block mt-4 text-center bg-white/70 text-[#3b3128] px-4 py-3 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
     >
-      <span className="text-lg leading-none">↓</span>
 
       {downloading
         ? "Erstelle ZIP..."
@@ -350,7 +349,6 @@ useEffect(() => {
       href={`/upload/${weddingId}`}
       className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
     >
-      <span className="text-lg leading-none">↑</span>
       Foto hochladen
     </Link>
   </div>
@@ -403,7 +401,7 @@ useEffect(() => {
                     }
                     className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
                       isSelected
-                        ? "bg-[#d4b06a] border-white"
+                        ? "bg-[#c8ad72] border-white"
                         : "bg-white/80 border-white"
                     }`}
                   >
@@ -463,7 +461,7 @@ useEffect(() => {
                   href={selectedPhoto.imageUrl}
                   download
                   target="_blank"
-                  className="mt-4 w-full max-w-md text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+                  className="mt-4 w-full max-w-md text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
                 >
                   Foto herunterladen
                 </a>

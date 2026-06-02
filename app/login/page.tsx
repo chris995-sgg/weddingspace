@@ -145,14 +145,14 @@ export default function LoginPage() {
     )}
 
     <input
-      className="w-full mb-4 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      className="w-full mb-4 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#c8ad72]"
       placeholder="E-Mail"
       value={email}
       onChange={(e) => setEmail(e.target.value)}
     />
 
     <input
-      className="w-full mb-6 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+      className="w-full mb-6 p-4 rounded-2xl bg-white/70 border border-[#d8cfc3] text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#c8ad72]"
       placeholder="Passwort"
       type="password"
       value={password}
@@ -168,7 +168,7 @@ export default function LoginPage() {
 
     <button
       onClick={register}
-      className="w-full mb-4 bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+      className="w-full mb-4 bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
     >
       Account erstellen
     </button>

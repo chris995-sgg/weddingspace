@@ -185,7 +185,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+          className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#c8ad72]"
           placeholder="z. B. Lisa & Tom"
         />
 
@@ -238,7 +238,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
     type="datetime-local"
     value={galleryRevealAt}
     onChange={(e) => setGalleryRevealAt(e.target.value)}
-    className="w-[250px] md:w-full max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#d4b06a]"
+    className="w-[250px] md:w-full max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#c8ad72]"
   />
 </div>
     </div>

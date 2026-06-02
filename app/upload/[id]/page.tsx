@@ -215,7 +215,7 @@ export default function UploadPage() {
           value={guestName}
           onChange={(e) => setGuestName(e.target.value)}
           placeholder="z. B. Anna"
-          className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#d4b06a]"
+          className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] placeholder:text-[#8b7a68] outline-none focus:ring-2 focus:ring-[#c8ad72]"
         />
       </div>
 
@@ -255,7 +255,7 @@ export default function UploadPage() {
 
         <Link
           href={`/gallery/${weddingId}`}
-          className="block mt-4 text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+          className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
         >
           Zur Bildergalerie
         </Link>
