@@ -346,7 +346,7 @@ useEffect(() => {
 
     <Link
       href={`/upload/${weddingId}`}
-      className="w-full bg-[#c8ad72] text-white px-6 py-4 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
+      className="w-full bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4"
     >
       Foto hochladen
     </Link>
