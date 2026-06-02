@@ -43,7 +43,7 @@ body::before {
     top: -80px;
     bottom: -160px;
     height: auto;
-    background-size: auto 100%; 
+    background-size: auto 120svh; 
     background-position: left top;
   }
 }
