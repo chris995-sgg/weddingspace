@@ -42,8 +42,8 @@ body::before {
   body::before {
   
     height: 100svh;
-    background-size: auto 140svh; 
-    background-position: left top;
+    background-size: auto 130svh; 
+    background-position: left -80px;
   }
 }
 * {
