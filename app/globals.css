@@ -28,11 +28,11 @@ body::before {
   pointer-events: none;
 
   width: 100vw;
-  height: 100svh;
+  height: 100vh;
 
   background-image: url("/background.png");
-  background-size: auto 100svh;
-  background-position: center top;
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
 
   transform: translateZ(0);
@@ -40,8 +40,10 @@ body::before {
 
 @media (max-width: 768px) {
   body::before {
-    height: 100svh;
-    background-size: auto 100svh;
+    top: -80px;
+    bottom: -160px;
+    height: auto;
+    background-size: auto 140%; 
     background-position: left top;
   }
 }
