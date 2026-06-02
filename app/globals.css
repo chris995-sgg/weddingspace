@@ -41,9 +41,9 @@ body::before {
 @media (max-width: 768px) {
   body::before {
     top: -80px;
-    bottom: -160px;
+    bottom: -240px;
     height: auto;
-    background-size: auto 140%; 
+    background-size: auto 120%; 
     background-position: left top;
   }
 }
