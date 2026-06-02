@@ -38,12 +38,11 @@ body::before {
   transform: translateZ(0);
 }
 
+
 @media (max-width: 768px) {
   body::before {
-  
-    height: 100svh;
-    background-size: auto 130svh; 
-    background-position: left -80px;
+    background-position: left top;
+
   }
 }
 * {
