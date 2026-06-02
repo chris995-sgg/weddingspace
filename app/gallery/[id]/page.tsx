@@ -315,14 +315,14 @@ useEffect(() => {
           </Link>
         )}
 
-<div className="w-full max-w-md bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
+<div className="w-full max-w-md md:mx-auto bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
   <div className="mb-6 flex justify-center items-center">
     <div className="w-20 h-px bg-[#c8ad72]"></div>
     <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
     <div className="w-20 h-px bg-[#c8ad72]"></div>
   </div>
 
-  <h1 className="font-elegant text-5xl font-medium text-[#3b3128] leading-tight tracking-wide">
+  <h1 className="font-elegant text-4xl font-medium text-[#3b3128] leading-tight tracking-wide">
     {eventTitle}
   </h1>
 
