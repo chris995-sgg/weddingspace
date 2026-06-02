@@ -337,8 +337,10 @@ useEffect(() => {
         downloading ||
         selectedPhotoIds.length === 0
       }
-      className="block mt-4 text-center bg-white/70 text-[#3b3128] px-4 py-3 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
+      className="block w-full mb-4 cursor-pointer bg-white/70 text-[#3b3128] px-4 py-3 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
+      
     >
+    
 
       {downloading
         ? "Erstelle ZIP..."
@@ -461,7 +463,8 @@ useEffect(() => {
                   href={selectedPhoto.imageUrl}
                   download
                   target="_blank"
-                  className="mt-4 w-full max-w-md text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+                  className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+                  //className="mt-4 w-full max-w-md text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
                 >
                   Foto herunterladen
                 </a>
