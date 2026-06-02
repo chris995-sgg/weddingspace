@@ -93,7 +93,7 @@ const [now, setNow] = useState(new Date());
       new Promise((resolve) => setTimeout(resolve, ms));
 
     async function preloadImage(url: string) {
-      for (let attempt = 1; attempt <= 10; attempt++) {
+      for (let attempt = 1; attempt <= 15; attempt++) {
         const success = await new Promise<boolean>((resolve) => {
           const img = new Image();
 
@@ -118,7 +118,7 @@ const [now, setNow] = useState(new Date());
 
         if (success) return;
 
-        if (attempt < 10) {
+        if (attempt < 15) {
           await wait(5);
         }
       }
