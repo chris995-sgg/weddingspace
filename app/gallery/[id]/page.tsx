@@ -315,8 +315,8 @@ useEffect(() => {
           </Link>
         )}
 
-   <div className="w-full max-w-4xl mx-auto bg-white/50 backdrop-blur rounded-[2.0rem] px-6 py-10 md:py-14 shadow-2xl border border-white/50 text-center">
-  <div className="mb-8 flex justify-center items-center">
+   <div className="w-full max-w-4xl mx-auto bg-white/50 backdrop-blur rounded-[2.0rem] px-4 py-10 md:py-14 shadow-2xl border border-white/50 text-center">
+  <div className="mb-6 flex justify-center items-center">
     <div className="w-20 md:w-28 h-px bg-[#c8ad72]"></div>
     <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
     <div className="w-20 md:w-28 h-px bg-[#c8ad72]"></div>
@@ -326,7 +326,7 @@ useEffect(() => {
     {eventTitle}
   </h1>
 
-  <p className="font-elegant text-3xl md:text-4xl font-medium text-[#3b3128] mt-4 mb-8 tracking-wide">
+  <p className="font-elegant text-3xl md:text-4xl font-medium text-[#3b3128] mt-3 mb-6 tracking-wide">
     Galerie
   </p>
 
@@ -337,7 +337,7 @@ useEffect(() => {
         downloading ||
         selectedPhotoIds.length === 0
       }
-      className="w-full max-w-sm bg-white/70 text-[#3b3128] px-4 py-3 rounded-full font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
+      className="block mt-4 text-center bg-white/70 text-[#3b3128] px-4 py-3 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg border border-[#d8cfc3] flex items-center justify-center gap-4 text-lg"
     >
       <span className="text-lg leading-none">↓</span>
 
@@ -348,7 +348,7 @@ useEffect(() => {
 
     <Link
       href={`/upload/${weddingId}`}
-      className="w-full max-w-sm bg-[#c8ad72] text-white px-4 py-3 rounded-full font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4 text-lg"
+      className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
     >
       <span className="text-lg leading-none">↑</span>
       Foto hochladen
