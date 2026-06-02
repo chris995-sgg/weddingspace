@@ -40,9 +40,9 @@ body::before {
 
 @media (max-width: 768px) {
   body::before {
-    top: -80px;
+    
     bottom: -160px;
-    height: auto;
+    height: 100svh;
     background-size: auto 120svh; 
     background-position: left top;
   }
