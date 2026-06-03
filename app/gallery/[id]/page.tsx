@@ -29,7 +29,6 @@ export default function GalleryPage() {
 
   const [visibleCount, setVisibleCount] = useState(0);
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [eventTitle, setEventTitle] = useState("");
   const [selectedPhoto, setSelectedPhoto] =
     useState<Photo | null>(null);
   const [selectedPhotoIds, setSelectedPhotoIds] =
@@ -93,7 +92,7 @@ const [now, setNow] = useState(new Date());
       new Promise((resolve) => setTimeout(resolve, ms));
 
     async function preloadImage(url: string) {
-      for (let attempt = 1; attempt <= 15; attempt++) {
+      for (let attempt = 1; attempt <= 10; attempt++) {
         const success = await new Promise<boolean>((resolve) => {
           const img = new Image();
 
@@ -118,8 +117,8 @@ const [now, setNow] = useState(new Date());
 
         if (success) return;
 
-        if (attempt < 15) {
-          await wait(50);
+        if (attempt < 10) {
+          await wait(5);
         }
       }
     }
@@ -144,7 +143,7 @@ const [now, setNow] = useState(new Date());
           Math.min(prev + batch.length, photos.length)
         );
 
-        await wait(50);
+        await wait(10);
       }
     }
 
@@ -162,8 +161,6 @@ useEffect(() => {
     if (!snapshot.exists()) return;
 
     const data = snapshot.data();
-
-    setEventTitle(data.title || "Galerie");
 
     setGalleryVisibilityMode(
       data.galleryVisibilityMode || "instant"
@@ -293,11 +290,11 @@ useEffect(() => {
   }
 
   return (
-  <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
+  <main className="min-h-screen flex items-start md:items-center justify-center pt-28 md:pt-6 p-6 relative text-black">
 
       {showInitialLoader && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-md text-[#3b3128]">
-          <div className="h-14 w-14 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin mb-5"></div>
+          <div className="h-14 w-14 rounded-full border-4 border-[#d4b06a] border-t-transparent animate-spin mb-5"></div>
 
           <p className="text-lg font-bold">
             Galerie wird geladen...
@@ -315,43 +312,36 @@ useEffect(() => {
           </Link>
         )}
 
-<div className="w-full max-w-md md:mx-auto bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
-  <div className="mb-6 flex justify-center items-center">
-    <div className="w-20 h-px bg-[#c8ad72]"></div>
-    <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
-    <div className="w-20 h-px bg-[#c8ad72]"></div>
-  </div>
+        <div className="bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 className="text-3xl font-bold text-center text-[#3b3128]">
+              WeddingSpace Galerie
+            </h1>
 
-  <h1 className="font-elegant text-4xl font-medium text-[#3b3128] leading-tight tracking-wide">
-    {eventTitle}
-  </h1>
+            <div className="flex flex-col md:flex-row gap-3">
+              <button
+                onClick={downloadSelectedPhotos}
+                disabled={
+                  downloading ||
+                  selectedPhotoIds.length === 0
+                }
+                className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
+              >
+                {downloading
+                  ? "Erstelle ZIP..."
+                  : `${selectedPhotoIds.length} herunterladen`}
+              </button>
 
-  <p className="font-elegant text-4xl font-medium text-[#3b3128] mt-3 mb-8 tracking-wide">
-    Galerie
-  </p>
+              <Link
+                href={`/upload/${weddingId}`}
+                className="bg-[#d4b06a] text-white px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition shadow-lg text-center"
+              >
+                Foto hochladen
+              </Link>
+            </div>
+          </div>
+        </div>
 
-  <div className="flex flex-col items-center gap-5">
-    <button
-      onClick={downloadSelectedPhotos}
-      disabled={
-        downloading ||
-        selectedPhotoIds.length === 0
-      }
-      className="w-full bg-white/60 text-[#3b3128] border border-[#d8cfc3] px-6 py-4 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg flex items-center justify-center gap-4"
-    >
-      {downloading
-        ? "Erstelle ZIP..."
-        : `${selectedPhotoIds.length} herunterladen`}
-    </button>
-
-    <Link
-      href={`/upload/${weddingId}`}
-      className="w-full bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4"
-    >
-      Foto hochladen
-    </Link>
-  </div>
-</div>
         <div className="mb-8"></div>
 
         {photos.length === 0 ? (
@@ -374,15 +364,16 @@ useEffect(() => {
                     onClick={() => setSelectedPhoto(photo)}
                     className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
                   >
-               <img
-                src={photo.imageUrl}
-                loading="eager"
-                decoding="async"
-                alt=""
-                className={`w-full h-64 object-cover rounded-2xl transition ${
-                  shouldBlurPhotos ? "blur-sm" : ""
-                }`}
-                />   
+                  <img
+                    src={photo.imageUrl}
+                    loading="eager"
+                    decoding="async"
+                    alt=""
+                    className={`w-full h-64 object-cover rounded-2xl transition ${
+                      shouldBlurPhotos ? "blur-sm" : ""
+                    }`}
+
+                    />
                   {shouldBlurPhotos && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
                       <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
@@ -399,7 +390,7 @@ useEffect(() => {
                     }
                     className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
                       isSelected
-                        ? "bg-[#c8ad72] border-white"
+                        ? "bg-[#d4b06a] border-white"
                         : "bg-white/80 border-white"
                     }`}
                   >
@@ -459,8 +450,7 @@ useEffect(() => {
                   href={selectedPhoto.imageUrl}
                   download
                   target="_blank"
-                  className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
-                  //className="mt-4 w-full max-w-md text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+                  className="mt-4 w-full max-w-md text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
                 >
                   Foto herunterladen
                 </a>
