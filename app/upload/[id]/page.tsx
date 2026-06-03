@@ -73,7 +73,7 @@ export default function UploadPage() {
           batch.map(async (file) => {
             let uploadFile = file;
 
-            if (file.size > 10 * 1024 * 1024) {
+            if (file.size > 8 * 1024 * 1024) {
               uploadFile = await imageCompression(file, {
                 maxSizeMB: 5,
                 useWebWorker: true,
