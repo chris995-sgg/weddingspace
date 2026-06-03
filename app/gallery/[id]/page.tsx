@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+
 
 import {
   collection,
+  doc,
   onSnapshot,
   orderBy,
   query,
 } from "firebase/firestore";
 
 import { useParams } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
 
 type Photo = {
   id: string;
@@ -19,247 +22,199 @@ type Photo = {
   guestName: string;
 };
 
-
 export default function GalleryPage() {
   const params = useParams();
 
   const weddingId = params.id as string;
+
   const [visibleCount, setVisibleCount] = useState(0);
-  const [preloadedOriginals, setPreloadedOriginals] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [eventTitle, setEventTitle] = useState("");
   const [selectedPhoto, setSelectedPhoto] =
     useState<Photo | null>(null);
-  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
+  const [selectedPhotoIds, setSelectedPhotoIds] =
+    useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showInitialLoader, setShowInitialLoader] = useState(true);
+
+  const [galleryVisibilityMode, setGalleryVisibilityMode] =
+  useState<"instant" | "date">("instant");
+
+const [galleryRevealAt, setGalleryRevealAt] =
+  useState<Date | null>(null);
+
+const [now, setNow] = useState(new Date());
+
   const selectedIndex = photos.findIndex(
     (photo) => photo.id === selectedPhoto?.id
   );
 
-const [totalDurationMs, setTotalDurationMs] =
-  useState<number | null>(null);
-
-const [loadReport, setLoadReport] = useState<
-  {
-    index: number;
-    url: string;
-    ok: boolean;
-    attempts: {
-      attempt: number;
-      startedAt: string;
-      endedAt: string;
-      durationMs: number;
-      reason: string;
-    }[];
-  }[]
->([]);
-  
-
-
-useEffect(() => {
-  if (photos.length === 0) return;
-
-  let cancelled = false;
-
-  const wait = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  async function preloadWithRetries(url: string) {
-const attempts: {
-  attempt: number;
-  startedAt: string;
-  endedAt: string;
-  durationMs: number;
-  reason: string;
-}[] = [];
-
-
-
- for (let attempt = 1; attempt <= 10; attempt++) {
-  const startMs = performance.now();
-
-  const startedAt = new Date().toLocaleTimeString("de-DE", {
-    hour12: false,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    fractionalSecondDigits: 3,
-  });
-
-const result = await new Promise<{
-  ok: boolean;
-  reason: string;
-}>((resolve) => {
-  const img = new Image();
-
-  img.decoding = "async";
-
-
-  const timeout = setTimeout(() => {
-    resolve({
-      ok: false,
-      reason: "Timeout nach 2000ms",
-    });
-  }, 2000);
-
-  img.onload = () => {
-    clearTimeout(timeout);
-    resolve({
-      ok: true,
-      reason: "Erfolgreich geladen",
-    });
-
-  };
-
-  img.onerror = () => {
-    clearTimeout(timeout);
-    resolve({
-      ok: false,
-      reason: "Fehler beim Laden",
-    });
-  };
-
-  img.src = url;
-});
-
-  const endMs = performance.now();
-
-  const endedAt = new Date().toLocaleTimeString("de-DE", {
-    hour12: false,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    fractionalSecondDigits: 3,
-  });
-
-attempts.push({
-  attempt,
-  startedAt,
-  endedAt,
-  durationMs: Math.round(endMs - startMs),
-  reason: result.reason,
-});
-
-    if (result.ok) {
-      return {
-        ok: true,
-        attempts,
-      };
-    }
-
-    if (attempt < 10) {
-      await wait(5);
-    }
-  }
-
-  return {
-    ok: false,
-    attempts,
-  };
-}
-
-  async function loadImagesInOrderStyle() {
-    setVisibleCount(0);
-    setPreloadedOriginals(false);
-    setLoadReport([]);
-    const overallStart = performance.now();
-
-const report: {
-  index: number;
-  url: string;
-  ok: boolean;
-
-  attempts: {
-  attempt: number;
-  startedAt: string;
-  endedAt: string;
-  durationMs: number;
-  reason: string;
-}[];
-
-}[] = [];
-
- for (let i = 0; i < photos.length; i += 8) {
-    if (cancelled) return;
-
-  const batch = photos.slice(i, i + 8);
-
-
-  const results = await Promise.all(
-    batch.map(async (photo, indexInBatch) => {
-      const url =
-        photo.imageUrl;
-
-      const result =
-        await preloadWithRetries(url);
-
-      return {
-        index: i + indexInBatch + 1,
-        url,
-        ok: result.ok,
-        attempts: result.attempts,
-      };
-    })
-  );
-
-  report.push(...results);
-
-  if (cancelled) return;
-
-  setVisibleCount((prev) =>
-    Math.min(prev + batch.length, photos.length)
-  );
-
-  await wait(10);
-}
-
-    if (!cancelled) {
-
-      const overallEnd = performance.now();
-      const totalTime = Math.round(
-      overallEnd - overallStart
-);
-
-      setTotalDurationMs(totalTime);
-      setLoadReport(report);
-    }
-  }
-
-  loadImagesInOrderStyle();
-
-  return () => {
-    cancelled = true;
-  };
-}, [photos]);
+  const shouldBlurPhotos =
+  galleryVisibilityMode === "date" &&
+  galleryRevealAt !== null &&
+  now < galleryRevealAt;
 
   useEffect(() => {
-  const q = query(
-    collection(db, "weddings", weddingId, "photos"),
-    orderBy("createdAt", "desc")
-  );
-
-  
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const photoList = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Photo[];
-
-    setPhotos(photoList);
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    setIsLoggedIn(!!user);
   });
 
   return () => unsubscribe();
+}, []);
+
+  useEffect(() => {
+  const timeout = setTimeout(() => {
+    setShowInitialLoader(false);
+  }, 5000);
+
+  return () => clearTimeout(timeout);
+}, []);
+
+  const galleryRevealDateText = galleryRevealAt
+  ? galleryRevealAt.toLocaleString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  : "";
+
+  useEffect(() => {
+    if (photos.length === 0) {
+      setVisibleCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const wait = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    async function preloadImage(url: string) {
+      for (let attempt = 1; attempt <= 15; attempt++) {
+        const success = await new Promise<boolean>((resolve) => {
+          const img = new Image();
+
+          img.decoding = "async";
+
+          const timeout = setTimeout(() => {
+            resolve(false);
+          }, 1000);
+
+          img.onload = () => {
+            clearTimeout(timeout);
+            resolve(true);
+          };
+
+          img.onerror = () => {
+            clearTimeout(timeout);
+            resolve(false);
+          };
+
+          img.src = url;
+        });
+
+        if (success) return;
+
+        if (attempt < 15) {
+          await wait(50);
+        }
+      }
+    }
+
+    async function loadImages() {
+      setVisibleCount(0);
+
+      for (let i = 0; i < photos.length; i += 8) {
+        if (cancelled) return;
+
+        const batch = photos.slice(i, i + 8);
+
+        await Promise.all(
+          batch.map((photo) =>
+            preloadImage(photo.imageUrl)
+          )
+        );
+
+        if (cancelled) return;
+
+        setVisibleCount((prev) =>
+          Math.min(prev + batch.length, photos.length)
+        );
+
+        await wait(10);
+      }
+    }
+
+    loadImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [photos]);
+
+useEffect(() => {
+  const weddingRef = doc(db, "weddings", weddingId);
+
+  const unsubscribe = onSnapshot(weddingRef, (snapshot) => {
+    if (!snapshot.exists()) return;
+
+    const data = snapshot.data();
+
+    setEventTitle(data.title || "Galerie");
+
+    setGalleryVisibilityMode(
+      data.galleryVisibilityMode || "instant"
+    );
+
+    setGalleryRevealAt(
+      data.galleryRevealAt?.toDate
+        ? data.galleryRevealAt.toDate()
+        : null
+    );
+  });
+
+  return () => unsubscribe();
+}, [weddingId]);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setNow(new Date());
+  }, 30000);
+
+  return () => clearInterval(interval);
+}, []);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "weddings", weddingId, "photos"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const photoList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Photo[];
+
+      setPhotos(photoList);
+    });
+
+    return () => unsubscribe();
   }, [weddingId]);
 
   useEffect(() => {
-  if (selectedPhoto) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "auto";
-  }
+    if (selectedPhoto) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
 
-  return () => {
-    document.body.style.overflow = "auto";
-  };
+    return () => {
+      document.body.style.overflow = "auto";
+    };
   }, [selectedPhoto]);
 
   function showNextPhoto() {
@@ -282,301 +237,237 @@ const report: {
   }
 
   function togglePhotoSelection(photoId: string) {
-  setSelectedPhotoIds((prev) =>
-    prev.includes(photoId)
-      ? prev.filter((id) => id !== photoId)
-      : [...prev, photoId]
-  );
-}
-
-async function downloadSelectedPhotos() {
-  if (selectedPhotoIds.length === 0) {
-    alert("Bitte wähle mindestens ein Foto aus.");
-    return;
-  }
-
-  setDownloading(true);
-
-  try {
-    const selectedPhotos = photos.filter((photo) =>
-      selectedPhotoIds.includes(photo.id)
+    setSelectedPhotoIds((prev) =>
+      prev.includes(photoId)
+        ? prev.filter((id) => id !== photoId)
+        : [...prev, photoId]
     );
-
-    const response = await fetch("/api/download-photos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        photos: selectedPhotos,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Download fehlgeschlagen.");
-    }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "weddingspace-fotos.zip";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 4000);
-  } catch (error) {
-    console.error(error);
-    alert("Download fehlgeschlagen.");
   }
 
-  setDownloading(false);
-}
-
-return (
-
-
-  <main className="min-h-screen pt-24 p-6 relative text-[#3b3128] overflow-x-hidden">
-
-    <div className="max-w-7xl mx-auto">
-
-        <Link
-         href="/dashboard"
-         className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
-           >
-         ← Zurück zum Dashboard
-         </Link>
-
-      <div className="bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50">
-      
-
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-
-          <h1 className="text-3xl font-bold text-center text-[#3b3128]">
-            WeddingSpace Galerie
-          </h1>
-
-<div className="flex flex-col md:flex-row gap-3">
-
-  <button
-    onClick={downloadSelectedPhotos}
-    disabled={
-      downloading ||
-      selectedPhotoIds.length === 0
+  async function downloadSelectedPhotos() {
+    if (selectedPhotoIds.length === 0) {
+      alert("Bitte wähle mindestens ein Foto aus.");
+      return;
     }
-    className="bg-[#3b3128] text-white px-5 py-3 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg"
-  >
-    {downloading
-      ? "Erstelle ZIP..."
-      : `${selectedPhotoIds.length} herunterladen`}
-  </button>
 
-  <Link
-    href={`/upload/${weddingId}`}
-    className="bg-[#d4b06a] text-white px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition shadow-lg text-center"
-  >
-    Foto hochladen
-  </Link>
+    setDownloading(true);
 
- <div className="mb-8"></div>
+    try {
+      const selectedPhotos = photos.filter((photo) =>
+        selectedPhotoIds.includes(photo.id)
+      );
 
-</div>
+      const response = await fetch("/api/download-photos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          photos: selectedPhotos,
+        }),
+      });
 
-        </div>
+      if (!response.ok) {
+        throw new Error("Download fehlgeschlagen.");
+      }
 
-      </div>
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
 
-      {photos.length === 0 ? (
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "weddingspace-fotos.zip";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
 
-      <div className="mb-8">
-        <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-6 shadow-2xl border border-white/50 text-center">
-    
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 4000);
+    } catch (error) {
+      console.error(error);
+      alert("Download fehlgeschlagen.");
+    }
 
-          <p className="text-[#6b5c4d]">
-            Noch keine Fotos hochgeladen.
-          </p>
-
-        </div>
-         </div>
-
-      ) : (
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-
-{photos.slice(0, visibleCount).map((photo) => {
-  const isSelected = selectedPhotoIds.includes(photo.id);
+    setDownloading(false);
+  }
 
   return (
-    <div key={photo.id} className="relative">
-      <button
-        onClick={() => setSelectedPhoto(photo)}
-        className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
-      >
-<img
-  src={photo.imageUrl}
-  loading="eager"
-  decoding="async"
-  alt=""
-  onError={(e) => {
-    const img = e.currentTarget;
+  <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
 
-  }}
-  className="w-full h-64 object-cover rounded-2xl"
+      {showInitialLoader && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-md text-[#3b3128]">
+          <div className="h-14 w-14 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin mb-5"></div>
 
-
-
-    />
-      </button>
-
-      <button
-        onClick={() => togglePhotoSelection(photo.id)}
-        className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
-          isSelected
-            ? "bg-[#d4b06a] border-white"
-            : "bg-white/80 border-white"
-        }`}
-      >
-        {isSelected ? "✓" : ""}
-      </button>
-
-      <p className="mt-2 text-center text-sm text-[#6b5c4d]">
-        {photo.guestName}
-      </p>
-    </div>
-  );
-})}
-
+          <p className="text-lg font-bold">
+            Galerie wird geladen...
+          </p>
         </div>
       )}
-    </div>
 
-    {selectedPhoto && (
-  <div className="fixed inset-0 bg-black/85 z-50 overflow-hidden flex items-center justify-center px-4 pt-24 pb-28 md:py-8">
+      <div className="max-w-7xl mx-auto">
+        {isLoggedIn && (
+          <Link
+            href="/dashboard"
+            className="absolute top-6 left-6 bg-white/50 backdrop-blur text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-xl border border-white/40 hover:bg-white/80 transition"
+          >
+            ← Zurück zum Dashboard
+          </Link>
+        )}
+
+<div className="w-full max-w-md md:mx-auto bg-white/50 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
+  <div className="mb-6 flex justify-center items-center">
+    <div className="w-20 h-px bg-[#c8ad72]"></div>
+    <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
+    <div className="w-20 h-px bg-[#c8ad72]"></div>
+  </div>
+
+  <h1 className="font-elegant text-4xl font-medium text-[#3b3128] leading-tight tracking-wide">
+    {eventTitle}
+  </h1>
+
+  <p className="font-elegant text-4xl font-medium text-[#3b3128] mt-3 mb-8 tracking-wide">
+    Galerie
+  </p>
+
+  <div className="flex flex-col items-center gap-5">
     <button
-      onClick={showPreviousPhoto}
-      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
+      onClick={downloadSelectedPhotos}
+      disabled={
+        downloading ||
+        selectedPhotoIds.length === 0
+      }
+      className="w-full bg-white/60 text-[#3b3128] border border-[#d8cfc3] px-6 py-4 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg flex items-center justify-center gap-4"
     >
-      ←
+      {downloading
+        ? "Erstelle ZIP..."
+        : `${selectedPhotoIds.length} herunterladen`}
     </button>
 
-    <button
-      onClick={showNextPhoto}
-      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
+    <Link
+      href={`/upload/${weddingId}`}
+      className="w-full bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4"
     >
-      →
-    </button>
-
-    <div className="w-full max-w-5xl flex flex-col items-center justify-center">
-      <div className="w-full flex justify-between items-center mb-4">
-        <p className="text-white text-sm">
-          Hochgeladen von {selectedPhoto.guestName}
-        </p>
-
-        <button
-          onClick={() => setSelectedPhoto(null)}
-          className="bg-white/90 text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg"
-        >
-          Schließen
-        </button>
-      </div>
-
-      <img
-        src={selectedPhoto.imageUrl}
-        alt=""
-        className="max-w-full max-h-[62vh] md:max-h-[78vh] object-contain rounded-[1.5rem] shadow-2xl"
-      />
-
-      <a
-        href={selectedPhoto.imageUrl}
-        download
-        target="_blank"
-        className="mt-4 w-full max-w-md text-center bg-[#d4b06a] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
-      >
-        Foto herunterladen
-      </a>
-    </div>
+      Foto hochladen
+    </Link>
   </div>
-)}
-   
+</div>
+        <div className="mb-8"></div>
 
-
- {loadReport.length > 0 && (
-  <div className="fixed bottom-6 right-6 z-50 max-w-xl max-h-96 overflow-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 p-4 text-sm text-[#3b3128]">
-    <h2 className="font-bold text-lg mb-3">
-      Ladebericht
-    </h2>
-
-    {totalDurationMs !== null && (
-  <div className="mb-4 p-3 rounded-xl bg-black/5">
-    <p>
-      Gesamtzeit:
-      {" "}
-      <strong>
-        {totalDurationMs} ms
-      </strong>
-    </p>
-
-    <p>
-      Sekunden:
-      {" "}
-      <strong>
-        {(totalDurationMs / 1000).toFixed(2)}
-      </strong>
-    </p>
-  </div>
-)}
-
-    <div className="space-y-4">
-      {loadReport.map((item) => (
-        <div
-          key={`${item.index}-${item.url}`}
-          className="border-b border-[#ddd] pb-3"
-        >
-          <p className="font-semibold">
-            Bild {item.index} — {item.ok ? "OK" : "Fehlgeschlagen"}
-          </p>
-
-          <p className="text-xs break-all opacity-70 mb-2">
-            {item.url}
-          </p>
-
-          {item.attempts.map((attempt) => (
-            <div
-              key={attempt.attempt}
-              className="ml-2 mb-2 rounded-xl bg-black/5 p-2"
-            >
-              <p>
-                Versuch {attempt.attempt}
-              </p>
-
-              <p>
-                Start: {attempt.startedAt}
-              </p>
-
-              <p>
-                Ende: {attempt.endedAt}
-              </p>
-
-              <p>
-                Dauer: {attempt.durationMs} ms
-              </p>
-
-              <p>
-                Ursache: {attempt.reason}
+        {photos.length === 0 ? (
+          <div className="mb-8">
+            <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-6 shadow-2xl border border-white/50 text-center">
+              <p className="text-[#6b5c4d]">
+                Noch keine Fotos hochgeladen.
               </p>
             </div>
-          ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
+            {photos.slice(0, visibleCount).map((photo) => {
+              const isSelected =
+                selectedPhotoIds.includes(photo.id);
+
+              return (
+                <div key={photo.id} className="relative">
+                  <button
+                    onClick={() => setSelectedPhoto(photo)}
+                    className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
+                  >
+               <img
+                src={photo.imageUrl}
+                loading="eager"
+                decoding="async"
+                alt=""
+                className={`w-full h-64 object-cover rounded-2xl transition ${
+                  shouldBlurPhotos ? "blur-sm" : ""
+                }`}
+                />   
+                  {shouldBlurPhotos && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+                      <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
+                        <p>Sichtbar ab</p>
+                        <p>{galleryRevealDateText} Uhr</p>
+                      </div>
+                    </div>
+                  )}
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      togglePhotoSelection(photo.id)
+                    }
+                    className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
+                      isSelected
+                        ? "bg-[#c8ad72] border-white"
+                        : "bg-white/80 border-white"
+                    }`}
+                  >
+                    {isSelected ? "✓" : ""}
+                  </button>
+
+                  <p className="mt-2 text-center text-sm text-[#6b5c4d]">
+                    {photo.guestName}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {selectedPhoto && (
+        <div className="fixed inset-0 bg-black/85 z-50 overflow-hidden flex items-center justify-center px-4 pt-24 pb-28 md:py-8">
+          <button
+            onClick={showPreviousPhoto}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
+          >
+            ←
+          </button>
+
+          <button
+            onClick={showNextPhoto}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur text-[#3b3128] w-14 h-14 rounded-full text-3xl font-bold z-50 shadow-xl border border-white/50 hover:bg-white transition"
+          >
+            →
+          </button>
+
+          <div className="w-full max-w-5xl flex flex-col items-center justify-center">
+            <div className="w-full flex justify-between items-center mb-4">
+              <p className="text-white text-sm">
+                Hochgeladen von {selectedPhoto.guestName}
+              </p>
+
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="bg-white/90 text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg"
+              >
+                Schließen
+              </button>
+            </div>
+
+             <img
+                src={selectedPhoto.imageUrl}
+                alt=""
+                className={`max-w-full max-h-[62vh] md:max-h-[78vh] object-contain rounded-[1.5rem] shadow-2xl transition ${
+                  shouldBlurPhotos ? "blur-sm" : ""
+                }`}
+              />
+
+              {!shouldBlurPhotos && (
+                <a
+                  href={selectedPhoto.imageUrl}
+                  download
+                  target="_blank"
+                  className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+                  //className="mt-4 w-full max-w-md text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+                >
+                  Foto herunterladen
+                </a>
+              )}
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-)}
-
-
-  </main>
-);
+      )}
+    </main>
+  );
 }
