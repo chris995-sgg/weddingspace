@@ -127,10 +127,10 @@ const [now, setNow] = useState(new Date());
           return;
         }
 
-      for (let i = 0; i < photos.length; i += 8) {
+      for (let i = 0; i < photos.length; i += 6) {
         if (cancelled) return;
 
-        const batch = photos.slice(i, i + 8);
+        const batch = photos.slice(i, i + 6);
 
         await Promise.all(
           batch.map((photo) =>
