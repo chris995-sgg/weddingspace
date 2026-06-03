@@ -169,7 +169,7 @@ useEffect(() => {
 
     const data = snapshot.data();
 
-    setEventTitle(data.title || "Galerie");
+    setEventTitle(data.title || "Galery");
 
     setGalleryVisibilityMode(
       data.galleryVisibilityMode || "instant"
