@@ -101,7 +101,7 @@ const [now, setNow] = useState(new Date());
 
           const timeout = setTimeout(() => {
             resolve(false);
-          }, 1000);
+          }, 800);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -374,16 +374,30 @@ useEffect(() => {
                     onClick={() => setSelectedPhoto(photo)}
                     className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
                   >
-                  <img
-                    src={photo.imageUrl}
-                    loading="eager"
-                    decoding="async"
-                    alt=""
-                    className={`w-full h-64 object-cover rounded-2xl transition ${
-                      shouldBlurPhotos ? "blur-sm" : ""
-                    }`}
+                 <img
+                  src={photo.imageUrl}
+                  loading="eager"
+                  decoding="async"
+                  alt=""
+                  onError={(e) => {
+                    const img = e.currentTarget;
 
-                    />
+                    if (img.dataset.retry === "true") return;
+
+                    img.dataset.retry = "true";
+
+                    setTimeout(() => {
+                      img.src = `${photo.imageUrl}${
+                        photo.imageUrl.includes("?") ? "&" : "?"
+                      }retry=${Date.now()}`;
+                    }, 200);
+                  }}
+                  className={`w-full h-64 object-cover rounded-2xl transition ${
+                    shouldBlurPhotos ? "blur-sm" : ""
+                  }`}
+                />
+
+                    
                   {shouldBlurPhotos && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
                       <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
