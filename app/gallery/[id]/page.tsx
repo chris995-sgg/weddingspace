@@ -144,7 +144,7 @@ const [now, setNow] = useState(new Date());
           Math.min(prev + batch.length, photos.length)
         );
 
-        await wait(10);
+        await wait(50);
       }
     }
 
