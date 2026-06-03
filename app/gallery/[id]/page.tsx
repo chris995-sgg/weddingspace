@@ -63,13 +63,7 @@ const [now, setNow] = useState(new Date());
   return () => unsubscribe();
 }, []);
 
-  useEffect(() => {
-  const timeout = setTimeout(() => {
-    setShowInitialLoader(false);
-  }, 7000);
 
-  return () => clearTimeout(timeout);
-}, []);
 
   const galleryRevealDateText = galleryRevealAt
   ? galleryRevealAt.toLocaleString("de-DE", {
@@ -124,8 +118,14 @@ const [now, setNow] = useState(new Date());
       }
     }
 
-    async function loadImages() {
-      setVisibleCount(0);
+        async function loadImages() {
+        setVisibleCount(0);
+        setShowInitialLoader(true);
+
+        if (photos.length === 0) {
+          setShowInitialLoader(false);
+          return;
+        }
 
       for (let i = 0; i < photos.length; i += 8) {
         if (cancelled) return;
@@ -140,11 +140,17 @@ const [now, setNow] = useState(new Date());
 
         if (cancelled) return;
 
-        setVisibleCount((prev) =>
-          Math.min(prev + batch.length, photos.length)
-        );
+          setVisibleCount((prev) => {
+          const next = Math.min(prev + batch.length, photos.length);
 
-        await wait(50);
+          if (next >= Math.min(8, photos.length)) {
+            setShowInitialLoader(false);
+          }
+
+          return next;
+        });
+
+      await wait(20);
       }
     }
 
