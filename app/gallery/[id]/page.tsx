@@ -333,7 +333,7 @@ useEffect(() => {
   </h1>
 
   <p className="font-elegant text-4xl font-medium text-[#3b3128] mt-3 mb-8 tracking-wide">
-    Galery
+    Galerie
   </p>
 
   <div className="flex flex-col items-center gap-5">
