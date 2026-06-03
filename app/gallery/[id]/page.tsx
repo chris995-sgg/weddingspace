@@ -169,7 +169,7 @@ useEffect(() => {
 
     const data = snapshot.data();
 
-    setEventTitle(data.title || "Galery");
+    setEventTitle(data.title || "Galerie");
 
     setGalleryVisibilityMode(
       data.galleryVisibilityMode || "instant"
@@ -333,7 +333,7 @@ useEffect(() => {
   </h1>
 
   <p className="font-elegant text-4xl font-medium text-[#3b3128] mt-3 mb-8 tracking-wide">
-    Galerie
+    Galery
   </p>
 
   <div className="flex flex-col items-center gap-5">
