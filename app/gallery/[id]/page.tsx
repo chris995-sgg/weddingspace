@@ -101,7 +101,7 @@ const [now, setNow] = useState(new Date());
 
           const timeout = setTimeout(() => {
             resolve(false);
-          }, 800);
+          }, 1500);
 
           img.onload = () => {
             clearTimeout(timeout);
