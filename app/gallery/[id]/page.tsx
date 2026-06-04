@@ -39,10 +39,10 @@ type ImageLoadReport = {
   attemptReports: ImageAttemptReport[];
 };
 
-const CONCURRENT_LOADS = 5;
+const CONCURRENT_LOADS = 8;
 
-const PRELOAD_ATTEMPTS = 3;
-const PRELOAD_TIMEOUT_MS = 3000;
+const PRELOAD_ATTEMPTS = 10;
+const PRELOAD_TIMEOUT_MS = 2000;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
 const VISIBLE_IMG_RETRIES = 5;
