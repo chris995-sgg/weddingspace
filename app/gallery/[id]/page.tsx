@@ -118,7 +118,7 @@ export default function GalleryPage() {
               success: false,
               reason: `Versuch ${attempt}: Timeout nach 1500 ms`,
             });
-          }, 1500);
+          }, 1000);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -190,10 +190,10 @@ export default function GalleryPage() {
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
 
-      for (let i = 0; i < photos.length; i += 6) {
+      for (let i = 0; i < photos.length; i += 4) {
         if (cancelled) return;
 
-        const batch = photos.slice(i, i + 6);
+        const batch = photos.slice(i, i + 4);
 
         const batchReports = await Promise.all(
           batch.map((photo) => preloadImage(photo))
@@ -216,7 +216,7 @@ export default function GalleryPage() {
           return next;
         });
 
-        await wait(100);
+        await wait(500);
       }
 
       if (cancelled) return;
