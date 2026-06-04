@@ -39,11 +39,11 @@ type ImageLoadReport = {
   attemptReports: ImageAttemptReport[];
 };
 
-const CONCURRENT_LOADS = 8;
+const CONCURRENT_LOADS = 5;
 
 const PRELOAD_ATTEMPTS = 5;
-const PRELOAD_TIMEOUT_MS = 10000;
-const PRELOAD_RETRY_DELAY_MS = 200;
+const PRELOAD_TIMEOUT_MS = 5000;
+const PRELOAD_RETRY_DELAY_MS = 50;
 
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
@@ -331,7 +331,7 @@ export default function GalleryPage() {
 
                     const next = [...prev, report.photoId];
 
-                    if (next.length >= Math.min(8, photos.length)) {
+                    if (next.length >= Math.min(6, photos.length)) {
                       setShowInitialLoader(false);
                     }
 
