@@ -42,7 +42,7 @@ type ImageLoadReport = {
 const CONCURRENT_LOADS = 10;
 
 const PRELOAD_ATTEMPTS = 10;
-const PRELOAD_TIMEOUT_MS = 100;
+const PRELOAD_TIMEOUT_MS = 1000;
 const PRELOAD_RETRY_DELAY_MS = 10;
 
 const VISIBLE_IMG_RETRIES = 5;
