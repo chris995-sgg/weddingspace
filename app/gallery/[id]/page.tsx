@@ -43,10 +43,11 @@ const CONCURRENT_LOADS = 8;
 
 const PRELOAD_ATTEMPTS = 5;
 const PRELOAD_TIMEOUT_MS = 10000;
-const PRELOAD_RETRY_DELAY_MS = 500;
+const PRELOAD_RETRY_DELAY_MS = 200;
 
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
+
 
 export default function GalleryPage() {
   const params = useParams();
