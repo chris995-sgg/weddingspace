@@ -40,8 +40,8 @@ type ImageLoadReport = {
 };
 
 const BATCH_SIZE = 8;
-const PRELOAD_ATTEMPTS = 5;
-const PRELOAD_TIMEOUT_MS = 3000;
+const PRELOAD_ATTEMPTS = 10;
+const PRELOAD_TIMEOUT_MS = 1500;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
 const PROBLEM_RETRY_ATTEMPTS = 10;
