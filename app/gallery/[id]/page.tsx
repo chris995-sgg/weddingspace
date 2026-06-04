@@ -87,7 +87,7 @@ const [now, setNow] = useState(new Date());
       new Promise((resolve) => setTimeout(resolve, ms));
 
     async function preloadImage(url: string) {
-      for (let attempt = 1; attempt <= 30; attempt++) {
+      for (let attempt = 1; attempt <= 20; attempt++) {
         const success = await new Promise<boolean>((resolve) => {
           const img = new Image();
 
@@ -112,7 +112,7 @@ const [now, setNow] = useState(new Date());
 
         if (success) return;
 
-        if (attempt < 30) {
+        if (attempt < 20) {
           await wait(50);
         }
       }
@@ -127,10 +127,10 @@ const [now, setNow] = useState(new Date());
           return;
         }
 
-      for (let i = 0; i < photos.length; i += 2) {
+      for (let i = 0; i < photos.length; i += 6) {
         if (cancelled) return;
 
-        const batch = photos.slice(i, i + 2);
+        const batch = photos.slice(i, i + 6);
 
         await Promise.all(
           batch.map((photo) =>
