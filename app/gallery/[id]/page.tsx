@@ -95,7 +95,7 @@ const [now, setNow] = useState(new Date());
 
           const timeout = setTimeout(() => {
             resolve(false);
-          }, 1500);
+          }, 1000);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -143,7 +143,7 @@ const [now, setNow] = useState(new Date());
           setVisibleCount((prev) => {
           const next = Math.min(prev + batch.length, photos.length);
 
-          if (next >= Math.min(6, photos.length)) {
+          if (next >= Math.min(8, photos.length)) {
             setShowInitialLoader(false);
           }
 
