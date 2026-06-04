@@ -360,27 +360,27 @@ useEffect(() => {
 </div>
         <div className="mb-8"></div>
 
-        {photos.length === 0 ? (
-          <div className="mb-8">
-            <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-6 shadow-2xl border border-white/50 text-center">
-              <p className="text-[#6b5c4d]">
-                Noch keine Fotos hochgeladen.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-            {photos.slice(0, visibleCount).map((photo) => {
-              const isSelected =
-                selectedPhotoIds.includes(photo.id);
+ {photos.length === 0 ? (
+  <div className="mb-8">
+    <div className="bg-white/50 backdrop-blur rounded-[1.5rem] p-6 shadow-2xl border border-white/50 text-center">
+      <p className="text-[#6b5c4d]">
+        Noch keine Fotos hochgeladen.
+      </p>
+    </div>
+  </div>
+) : (
+  <>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
+      {photos.slice(0, visibleCount).map((photo) => {
+        const isSelected = selectedPhotoIds.includes(photo.id);
 
-              return (
-                <div key={photo.id} className="relative">
-                  <button
-                    onClick={() => setSelectedPhoto(photo)}
-                    className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30"
-                  >
-               <img
+        return (
+          <div key={photo.id} className="relative">
+            <button
+              onClick={() => setSelectedPhoto(photo)}
+              className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
+            >
+              <img
                 src={photo.imageUrl}
                 loading="eager"
                 decoding="async"
@@ -388,39 +388,51 @@ useEffect(() => {
                 className={`w-full h-64 object-cover rounded-2xl transition ${
                   shouldBlurPhotos ? "blur-sm" : ""
                 }`}
-                />   
-                  {shouldBlurPhotos && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
-                      <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
-                        <p>Sichtbar ab</p>
-                        <p>{galleryRevealDateText} Uhr</p>
-                      </div>
-                    </div>
-                  )}
-                  </button>
+              />
 
-                  <button
-                    onClick={() =>
-                      togglePhotoSelection(photo.id)
-                    }
-                    className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
-                      isSelected
-                        ? "bg-[#c8ad72] border-white"
-                        : "bg-white/80 border-white"
-                    }`}
-                  >
-                    {isSelected ? "✓" : ""}
-                  </button>
-
-                  <p className="mt-2 text-center text-sm text-[#6b5c4d]">
-                    {photo.guestName}
-                  </p>
+              {shouldBlurPhotos && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+                  <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
+                    <p>Sichtbar ab</p>
+                    <p>{galleryRevealDateText} Uhr</p>
+                  </div>
                 </div>
-              );
-            })}
+              )}
+            </button>
+
+            <button
+              onClick={() => togglePhotoSelection(photo.id)}
+              className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
+                isSelected
+                  ? "bg-[#c8ad72] border-white"
+                  : "bg-white/80 border-white"
+              }`}
+            >
+              {isSelected ? "✓" : ""}
+            </button>
+
+            <p className="mt-2 text-center text-sm text-[#6b5c4d]">
+              {photo.guestName || "Gast"}
+            </p>
           </div>
-        )}
-      </div>
+        );
+      })}
+    </div>
+
+    <div className="mt-8 text-center">
+      {visibleCount < photos.length ? (
+        <p className="text-[#3b3128]/70 font-semibold">
+          Weitere Bilder werden geladen...
+        </p>
+      ) : (
+        <p className="text-[#3b3128]/70 font-semibold">
+          Alle Bilder geladen
+        </p>
+      )}
+    </div>
+  </>
+)}
+ </div>
 
       {selectedPhoto && (
         <div className="fixed inset-0 bg-black/85 z-50 overflow-hidden flex items-center justify-center px-4 pt-24 pb-28 md:py-8">
