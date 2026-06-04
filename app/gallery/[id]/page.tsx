@@ -31,12 +31,12 @@ type ImageLoadReport = {
   firstFailureReason: string;
 };
 
-const BATCH_SIZE = 6;
-const PRELOAD_ATTEMPTS = 10;
-const PRELOAD_TIMEOUT_MS = 1200;
-const PRELOAD_RETRY_DELAY_MS = 200;
+const BATCH_SIZE = 8;
+const PRELOAD_ATTEMPTS = 15;
+const PRELOAD_TIMEOUT_MS = 1000;
+const PRELOAD_RETRY_DELAY_MS = 100;
 const VISIBLE_IMG_RETRIES = 5;
-const VISIBLE_IMG_RETRY_DELAY_MS = 200;
+const VISIBLE_IMG_RETRY_DELAY_MS = 100;
 
 export default function GalleryPage() {
   const params = useParams();
