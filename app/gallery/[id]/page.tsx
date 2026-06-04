@@ -21,7 +21,7 @@ type Photo = {
   guestName: string;
 };
 
-const BATCH_SIZE = 8;
+const BATCH_SIZE = 4;
 const IMG_RETRIES = 5;
 const IMG_RETRY_DELAY_MS = 100;
 
