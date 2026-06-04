@@ -26,6 +26,8 @@ type ImageAttemptReport = {
   success: boolean;
   durationMs: number;
   reason: string;
+  startedAt: string;
+  endedAt: string;
 };
 
 type ImageLoadReport = {
@@ -39,15 +41,19 @@ type ImageLoadReport = {
   attemptReports: ImageAttemptReport[];
 };
 
-const CONCURRENT_LOADS = 10;
+const INITIAL_CONCURRENT_LOADS = 10;
+const FINAL_RETRY_CONCURRENT_LOADS = 5;
 
-const PRELOAD_ATTEMPTS = 30;
-const PRELOAD_TIMEOUT_MS = 1000;
-const PRELOAD_RETRY_DELAY_MS = 10;
+const PRELOAD_ATTEMPTS = 5;
+const PRELOAD_TIMEOUT_MS = 1500;
+const PRELOAD_RETRY_DELAY_MS = 50;
+
+const FINAL_RETRY_ATTEMPTS = 10;
+const FINAL_RETRY_TIMEOUT_MS = 4000;
+const FINAL_RETRY_DELAY_MS = 100;
 
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
-
 
 export default function GalleryPage() {
   const params = useParams();
@@ -177,18 +183,28 @@ export default function GalleryPage() {
     const wait = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
-    async function preloadImage(
-      photo: Photo
+    function formatDebugTime(date: Date) {
+      return date.toLocaleTimeString("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        fractionalSecondDigits: 3,
+      });
+    }
+
+    async function loadSingleImage(
+      photo: Photo,
+      maxAttempts: number,
+      timeoutMs: number,
+      retryDelayMs: number,
+      labelPrefix: string
     ): Promise<ImageLoadReport> {
       const startTime = performance.now();
       let firstFailureReason = "";
       const attemptReports: ImageAttemptReport[] = [];
 
-      for (
-        let attempt = 1;
-        attempt <= PRELOAD_ATTEMPTS;
-        attempt++
-      ) {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const attemptStartedAt = new Date();
         const attemptStartTime = performance.now();
 
         const result = await new Promise<{
@@ -202,9 +218,9 @@ export default function GalleryPage() {
           const timeout = setTimeout(() => {
             resolve({
               success: false,
-              reason: `Timeout nach ${PRELOAD_TIMEOUT_MS} ms`,
+              reason: `Timeout nach ${timeoutMs} ms`,
             });
-          }, PRELOAD_TIMEOUT_MS);
+          }, timeoutMs);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -222,18 +238,24 @@ export default function GalleryPage() {
             });
           };
 
-          img.src = photo.imageUrl;
+          img.src = `${photo.imageUrl}${
+            photo.imageUrl.includes("?") ? "&" : "?"
+          }load=${Date.now()}-${labelPrefix}-${attempt}`;
         });
+
+        const attemptEndedAt = new Date();
 
         const attemptDurationMs = Math.round(
           performance.now() - attemptStartTime
         );
 
         attemptReports.push({
-          label: `Versuch ${attempt}`,
+          label: `${labelPrefix} ${attempt}`,
           success: result.success,
           durationMs: attemptDurationMs,
           reason: result.reason,
+          startedAt: formatDebugTime(attemptStartedAt),
+          endedAt: formatDebugTime(attemptEndedAt),
         });
 
         if (result.success) {
@@ -253,11 +275,11 @@ export default function GalleryPage() {
         }
 
         if (!firstFailureReason) {
-          firstFailureReason = `Versuch ${attempt}: ${result.reason}`;
+          firstFailureReason = `${labelPrefix} ${attempt}: ${result.reason}`;
         }
 
-        if (attempt < PRELOAD_ATTEMPTS) {
-          await wait(PRELOAD_RETRY_DELAY_MS);
+        if (attempt < maxAttempts) {
+          await wait(retryDelayMs);
         }
       }
 
@@ -266,7 +288,7 @@ export default function GalleryPage() {
         guestName: photo.guestName || "Gast",
         url: photo.imageUrl,
         success: false,
-        attempts: PRELOAD_ATTEMPTS,
+        attempts: maxAttempts,
         durationMs: Math.round(performance.now() - startTime),
         firstFailureReason:
           firstFailureReason || "Bild wurde aufgegeben",
@@ -274,7 +296,99 @@ export default function GalleryPage() {
       };
     }
 
-    async function loadImagesWithLimit() {
+    async function runQueue(
+      photoList: Photo[],
+      maxAttempts: number,
+      timeoutMs: number,
+      retryDelayMs: number,
+      labelPrefix: string,
+      concurrentLoads: number
+    ) {
+      const queueReports: ImageLoadReport[] = [];
+      const failedPhotos: Photo[] = [];
+
+      let nextIndex = 0;
+      let activeCount = 0;
+      let finishedCount = 0;
+
+      await new Promise<void>((resolve) => {
+        function startNext() {
+          if (cancelled) {
+            resolve();
+            return;
+          }
+
+          while (
+            activeCount < concurrentLoads &&
+            nextIndex < photoList.length
+          ) {
+            const photo = photoList[nextIndex];
+
+            nextIndex++;
+            activeCount++;
+
+            loadSingleImage(
+              photo,
+              maxAttempts,
+              timeoutMs,
+              retryDelayMs,
+              labelPrefix
+            ).then((report) => {
+              if (cancelled) {
+                resolve();
+                return;
+              }
+
+              queueReports.push(report);
+
+              finishedCount++;
+              activeCount--;
+
+              if (report.success) {
+                setDisplayedPhotoIds((prev) => {
+                  if (prev.includes(report.photoId)) {
+                    return prev;
+                  }
+
+                  const next = [...prev, report.photoId];
+
+                  if (next.length >= Math.min(8, photos.length)) {
+                    setShowInitialLoader(false);
+                  }
+
+                  return next;
+                });
+              } else {
+                failedPhotos.push(photo);
+              }
+
+              setCompletedImageCount((prev) =>
+                Math.min(prev + 1, photos.length)
+              );
+
+              if (
+                finishedCount >= photoList.length &&
+                activeCount === 0
+              ) {
+                resolve();
+                return;
+              }
+
+              startNext();
+            });
+          }
+        }
+
+        startNext();
+      });
+
+      return {
+        reports: queueReports,
+        failedPhotos,
+      };
+    }
+
+    async function loadImages() {
       setDisplayedPhotoIds([]);
       setCompletedImageCount(0);
       setImageLoadReports([]);
@@ -289,80 +403,47 @@ export default function GalleryPage() {
       setShowInitialLoader(true);
 
       const totalStartTime = performance.now();
-      const reports: ImageLoadReport[] = [];
+      const allReports: ImageLoadReport[] = [];
 
-      let nextIndex = 0;
-      let activeCount = 0;
-      let completedCount = 0;
-
-      await new Promise<void>((resolve) => {
-        function startNext() {
-          if (cancelled) {
-            resolve();
-            return;
-          }
-
-          while (
-            activeCount < CONCURRENT_LOADS &&
-            nextIndex < photos.length
-          ) {
-            const photo = photos[nextIndex];
-            nextIndex++;
-            activeCount++;
-
-            preloadImage(photo).then((report) => {
-              if (cancelled) {
-                resolve();
-                return;
-              }
-
-              reports.push(report);
-
-              completedCount++;
-              activeCount--;
-
-              setCompletedImageCount(completedCount);
-
-                if (report.success) {
-                  setDisplayedPhotoIds((prev) => {
-                    if (prev.includes(report.photoId)) {
-                      return prev;
-                    }
-
-                    const next = [...prev, report.photoId];
-
-                    if (next.length >= Math.min(6, photos.length)) {
-                      setShowInitialLoader(false);
-                    }
-
-                    return next;
-                  });
-                }
-
-              if (completedCount >= photos.length) {
-                setShowInitialLoader(false);
-                resolve();
-                return;
-              }
-
-              startNext();
-            });
-          }
-        }
-
-        startNext();
-      });
+      const firstRun = await runQueue(
+        photos,
+        PRELOAD_ATTEMPTS,
+        PRELOAD_TIMEOUT_MS,
+        PRELOAD_RETRY_DELAY_MS,
+        "Normaler Versuch",
+        INITIAL_CONCURRENT_LOADS
+      );
 
       if (cancelled) return;
 
-      setImageLoadReports(reports);
+      allReports.push(...firstRun.reports);
+
+      if (firstRun.failedPhotos.length > 0) {
+        const finalRetryRun = await runQueue(
+          firstRun.failedPhotos,
+          FINAL_RETRY_ATTEMPTS,
+          FINAL_RETRY_TIMEOUT_MS,
+          FINAL_RETRY_DELAY_MS,
+          "Finaler Nachversuch",
+          FINAL_RETRY_CONCURRENT_LOADS
+        );
+
+        if (cancelled) return;
+
+        allReports.push(...finalRetryRun.reports);
+      }
+
+      setShowInitialLoader(false);
+
+      setImageLoadReports(allReports);
       setTotalImageLoadDurationMs(
         Math.round(performance.now() - totalStartTime)
       );
+
       setShowLoadReport(false);
     }
 
-    loadImagesWithLimit();
+    loadImages();
 
     return () => {
       cancelled = true;
@@ -394,9 +475,9 @@ export default function GalleryPage() {
     img.dataset.retry = String(currentRetry + 1);
 
     setTimeout(() => {
-      img.src = `${url}${url.includes("?") ? "&" : "?"}retry=${Date.now()}-${
-        currentRetry + 1
-      }`;
+      img.src = `${url}${
+        url.includes("?") ? "&" : "?"
+      }retry=${Date.now()}-${currentRetry + 1}`;
     }, VISIBLE_IMG_RETRY_DELAY_MS);
   }
 
@@ -641,13 +722,13 @@ export default function GalleryPage() {
       </div>
 
       {isLoggedIn && imageLoadReports.length > 0 && !showLoadReport && (
-  <button
-    onClick={() => setShowLoadReport(true)}
-    className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
-  >
-    Ladebericht
-  </button>
-)}
+        <button
+          onClick={() => setShowLoadReport(true)}
+          className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
+        >
+          Ladebericht
+        </button>
+      )}
 
       {showLoadReport && (
         <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -742,6 +823,14 @@ export default function GalleryPage() {
                                   ? "geladen"
                                   : "fehlgeschlagen"}
                               </span>
+                            </p>
+
+                            <p>
+                              Gestartet: {attempt.startedAt}
+                            </p>
+
+                            <p>
+                              Beendet: {attempt.endedAt}
                             </p>
 
                             <p>
