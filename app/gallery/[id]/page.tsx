@@ -708,17 +708,26 @@ async function retryProblemImage(
                 })}
             </div>
 
-            <div className="mt-8 text-center">
-              {completedImageCount < photos.length ? (
-                <p className="text-[#3b3128]/70 font-semibold">
-                  Weitere Bilder werden geladen...
-                </p>
-              ) : (
-                <p className="text-[#3b3128]/70 font-semibold">
-                  Alle Bilder geladen
-                </p>
-              )}
-            </div>
+          <div className="mt-8 text-center">
+        <p className="text-[#3b3128]/70 font-semibold">
+          {displayedPhotoIds.length} von {photos.length} Bildern geladen
+        </p>
+
+        {completedImageCount < photos.length && (
+          <p className="text-[#3b3128]/50 text-sm mt-1">
+            Weitere Bilder werden geprüft...
+          </p>
+        )}
+
+        {completedImageCount >= photos.length &&
+          displayedPhotoIds.length < photos.length && (
+            <p className="text-[#8a5a44] text-sm mt-1 font-semibold">
+              {photos.length - displayedPhotoIds.length} Bild
+              {photos.length - displayedPhotoIds.length === 1 ? "" : "er"} konnte
+              {photos.length - displayedPhotoIds.length === 1 ? "" : "n"} nicht geladen werden.
+            </p>
+          )}
+      </div>
           </>
         )}
       </div>
