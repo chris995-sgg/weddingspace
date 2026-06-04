@@ -104,7 +104,7 @@ export default function GalleryPage() {
       const startTime = performance.now();
       let firstFailureReason = "";
 
-      for (let attempt = 1; attempt <= 20; attempt++) {
+      for (let attempt = 1; attempt <= 10; attempt++) {
         const result = await new Promise<{
           success: boolean;
           reason: string;
@@ -118,7 +118,7 @@ export default function GalleryPage() {
               success: false,
               reason: `Versuch ${attempt}: Timeout nach 500 ms`,
             });
-          }, 500);
+          }, 700);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -158,8 +158,8 @@ export default function GalleryPage() {
           firstFailureReason = result.reason;
         }
 
-        if (attempt < 20) {
-          await wait(50);
+        if (attempt < 10) {
+          await wait(100);
         }
       }
 
@@ -168,7 +168,7 @@ export default function GalleryPage() {
         guestName: photo.guestName || "Gast",
         url: photo.imageUrl,
         success: false,
-        attempts: 20,
+        attempts: 10,
         durationMs: Math.round(performance.now() - startTime),
         firstFailureReason:
           firstFailureReason || "Unbekannter Fehler",
@@ -216,7 +216,7 @@ export default function GalleryPage() {
           return next;
         });
 
-        await wait(50);
+        await wait(200);
       }
 
       if (cancelled) return;
