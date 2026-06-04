@@ -104,7 +104,7 @@ export default function GalleryPage() {
       const startTime = performance.now();
       let firstFailureReason = "";
 
-      for (let attempt = 1; attempt <= 10; attempt++) {
+      for (let attempt = 1; attempt <= 5; attempt++) {
         const result = await new Promise<{
           success: boolean;
           reason: string;
@@ -118,7 +118,7 @@ export default function GalleryPage() {
               success: false,
               reason: `Versuch ${attempt}: Timeout nach 1500 ms`,
             });
-          }, 1000);
+          }, 1500);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -158,7 +158,7 @@ export default function GalleryPage() {
           firstFailureReason = result.reason;
         }
 
-        if (attempt < 10) {
+        if (attempt < 5) {
           await wait(50);
         }
       }
@@ -190,10 +190,10 @@ export default function GalleryPage() {
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
 
-      for (let i = 0; i < photos.length; i += 4) {
+      for (let i = 0; i < photos.length; i += 6) {
         if (cancelled) return;
 
-        const batch = photos.slice(i, i + 4);
+        const batch = photos.slice(i, i + 6);
 
         const batchReports = await Promise.all(
           batch.map((photo) => preloadImage(photo))
@@ -209,14 +209,14 @@ export default function GalleryPage() {
             photos.length
           );
 
-          if (next >= Math.min(8, photos.length)) {
+          if (next >= Math.min(6, photos.length)) {
             setShowInitialLoader(false);
           }
 
           return next;
         });
 
-        await wait(500);
+        await wait(50);
       }
 
       if (cancelled) return;
@@ -454,16 +454,29 @@ export default function GalleryPage() {
                       onClick={() => setSelectedPhoto(photo)}
                       className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
                     >
-                      <img
-                        src={photo.imageUrl}
-                        loading="eager"
-                        decoding="async"
-                        alt=""
-                        className={`w-full h-64 object-cover rounded-2xl transition ${
-                          shouldBlurPhotos ? "blur-sm" : ""
-                        }`}
-                      />
+                  <img
+                    src={photo.imageUrl}
+                    loading="eager"
+                    decoding="async"
+                    alt=""
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      const currentRetry = Number(img.dataset.retry || "0");
 
+                      if (currentRetry >= 5) return;
+
+                      img.dataset.retry = String(currentRetry + 1);
+
+                      setTimeout(() => {
+                        img.src = `${photo.imageUrl}${
+                          photo.imageUrl.includes("?") ? "&" : "?"
+                        }retry=${Date.now()}`;
+                      }, 200);
+                    }}
+                    className={`w-full h-64 object-cover rounded-2xl transition ${
+                      shouldBlurPhotos ? "blur-sm" : ""
+                    }`}
+                  />
                       {shouldBlurPhotos && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
                           <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
