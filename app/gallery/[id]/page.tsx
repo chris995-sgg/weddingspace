@@ -31,10 +31,15 @@ type ImageLoadReport = {
   firstFailureReason: string;
 };
 
-const BATCH_SIZE = 8;
-const PRELOAD_ATTEMPTS = 15;
-const PRELOAD_TIMEOUT_MS = 1000;
+const BATCH_SIZE = 4;
+const PRELOAD_ATTEMPTS = 3;
+const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 100;
+
+const PROBLEM_RETRY_ATTEMPTS = 5;
+const PROBLEM_RETRY_TIMEOUT_MS = 5000;
+const PROBLEM_RETRY_DELAY_MS = 500;
+
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 100;
 
@@ -240,6 +245,90 @@ export default function GalleryPage() {
       };
     }
 
+    async function retryProblemImage(
+      photo: Photo
+    ): Promise<ImageLoadReport> {
+      const startTime = performance.now();
+      let firstFailureReason = "";
+
+      for (
+        let attempt = 1;
+        attempt <= PROBLEM_RETRY_ATTEMPTS;
+        attempt++
+      ) {
+        const result = await new Promise<{
+          success: boolean;
+          reason: string;
+        }>((resolve) => {
+          const img = new Image();
+
+          img.decoding = "async";
+
+          const timeout = setTimeout(() => {
+            resolve({
+              success: false,
+              reason: `Langsamer Nachversuch ${attempt}: Timeout nach ${PROBLEM_RETRY_TIMEOUT_MS} ms`,
+            });
+          }, PROBLEM_RETRY_TIMEOUT_MS);
+
+          img.onload = () => {
+            clearTimeout(timeout);
+            resolve({
+              success: true,
+              reason: "",
+            });
+          };
+
+          img.onerror = () => {
+            clearTimeout(timeout);
+            resolve({
+              success: false,
+              reason: `Langsamer Nachversuch ${attempt}: Bild konnte nicht geladen werden`,
+            });
+          };
+
+          img.src = `${photo.imageUrl}${
+            photo.imageUrl.includes("?") ? "&" : "?"
+          }problemRetry=${Date.now()}-${attempt}`;
+        });
+
+        if (result.success) {
+          return {
+            photoId: photo.id,
+            guestName: photo.guestName || "Gast",
+            url: photo.imageUrl,
+            success: true,
+            attempts: attempt,
+            durationMs: Math.round(
+              performance.now() - startTime
+            ),
+            firstFailureReason:
+              firstFailureReason || "Beim Nachversuch geladen",
+          };
+        }
+
+        if (!firstFailureReason) {
+          firstFailureReason = result.reason;
+        }
+
+        if (attempt < PROBLEM_RETRY_ATTEMPTS) {
+          await wait(PROBLEM_RETRY_DELAY_MS);
+        }
+      }
+
+      return {
+        photoId: photo.id,
+        guestName: photo.guestName || "Gast",
+        url: photo.imageUrl,
+        success: false,
+        attempts: PROBLEM_RETRY_ATTEMPTS,
+        durationMs: Math.round(performance.now() - startTime),
+        firstFailureReason:
+          firstFailureReason ||
+          "Auch im langsamen Nachversuch fehlgeschlagen",
+      };
+    }
+
     async function loadBatches() {
       setDisplayedPhotoIds([]);
       setCompletedImageCount(0);
@@ -256,6 +345,7 @@ export default function GalleryPage() {
 
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
+      const failedPhotos: Photo[] = [];
 
       for (let i = 0; i < photos.length; i += BATCH_SIZE) {
         if (cancelled) return;
@@ -274,9 +364,21 @@ export default function GalleryPage() {
           .filter((report) => report.success)
           .map((report) => report.photoId);
 
+        const failedPhotoIds = batchReports
+          .filter((report) => !report.success)
+          .map((report) => report.photoId);
+
+        const failedBatchPhotos = batch.filter((photo) =>
+          failedPhotoIds.includes(photo.id)
+        );
+
+        failedPhotos.push(...failedBatchPhotos);
+
         setDisplayedPhotoIds((prev) => [
           ...prev,
-          ...successfulPhotoIds,
+          ...successfulPhotoIds.filter(
+            (id) => !prev.includes(id)
+          ),
         ]);
 
         setCompletedImageCount((prev) =>
@@ -289,6 +391,27 @@ export default function GalleryPage() {
       }
 
       if (cancelled) return;
+
+      if (failedPhotos.length > 0) {
+        const retryReports = await Promise.all(
+          failedPhotos.map((photo) => retryProblemImage(photo))
+        );
+
+        if (cancelled) return;
+
+        reports.push(...retryReports);
+
+        const recoveredPhotoIds = retryReports
+          .filter((report) => report.success)
+          .map((report) => report.photoId);
+
+        setDisplayedPhotoIds((prev) => [
+          ...prev,
+          ...recoveredPhotoIds.filter(
+            (id) => !prev.includes(id)
+          ),
+        ]);
+      }
 
       setImageLoadReports(reports);
       setTotalImageLoadDurationMs(
@@ -574,7 +697,7 @@ export default function GalleryPage() {
                 </p>
 
                 <p className="text-sm text-[#6b5c4d]">
-                  Bilder: {imageLoadReports.length}
+                  Berichte: {imageLoadReports.length}
                 </p>
               </div>
 
@@ -589,11 +712,11 @@ export default function GalleryPage() {
             <div className="space-y-4">
               {imageLoadReports.map((report, index) => (
                 <div
-                  key={report.photoId}
+                  key={`${report.photoId}-${index}`}
                   className="bg-[#f7f1e8] border border-[#e0d4c3] rounded-2xl p-4"
                 >
                   <p className="font-bold">
-                    Bild {index + 1} — {report.guestName}
+                    Bericht {index + 1} — {report.guestName}
                   </p>
 
                   <p className="text-sm mt-1">
@@ -606,8 +729,8 @@ export default function GalleryPage() {
                       }
                     >
                       {report.success
-                        ? "im Hintergrund geladen"
-                        : "im Hintergrund aufgegeben"}
+                        ? "geladen"
+                        : "aufgegeben"}
                     </span>
                   </p>
 
