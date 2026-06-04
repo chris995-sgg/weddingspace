@@ -113,7 +113,7 @@ const [now, setNow] = useState(new Date());
         if (success) return;
 
         if (attempt < 30) {
-          await wait(100);
+          await wait(50);
         }
       }
     }
@@ -127,10 +127,10 @@ const [now, setNow] = useState(new Date());
           return;
         }
 
-      for (let i = 0; i < photos.length; i += 4) {
+      for (let i = 0; i < photos.length; i += 2) {
         if (cancelled) return;
 
-        const batch = photos.slice(i, i + 4);
+        const batch = photos.slice(i, i + 2);
 
         await Promise.all(
           batch.map((photo) =>
