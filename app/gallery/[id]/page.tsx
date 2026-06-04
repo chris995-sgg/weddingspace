@@ -31,10 +31,10 @@ type ImageLoadReport = {
   firstFailureReason: string;
 };
 
-const BATCH_SIZE = 6;
-const MAX_IMG_RETRIES = 2;
-const IMG_RETRY_DELAY_MS = 400;
-const BATCH_TIMEOUT_MS = 8000;
+const BATCH_SIZE = 8;
+const MAX_IMG_RETRIES = 4;
+const IMG_RETRY_DELAY_MS = 500;
+const BATCH_TIMEOUT_MS = 6000;
 
 export default function GalleryPage() {
   const params = useParams();
@@ -508,25 +508,28 @@ export default function GalleryPage() {
                         loading="eager"
                         decoding="async"
                         alt=""
-                        onLoad={(e) => {
-                          const img = e.currentTarget;
-                          const attempts =
-                            Number(img.dataset.retry || "0") +
-                            1;
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      const attempts =
+                        Number(img.dataset.retry || "0") + 1;
 
-                          imageAttemptsRef.current[photo.id] =
-                            attempts;
+                      imageAttemptsRef.current[photo.id] = attempts;
 
-                          recordImageResult({
-                            photo,
-                            success: true,
-                            attempts,
-                            firstFailureReason:
-                              imageFirstFailureRef.current[
-                                photo.id
-                              ] || "Kein Fehlversuch",
-                          });
-                        }}
+                      requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                          setTimeout(() => {
+                            recordImageResult({
+                              photo,
+                              success: true,
+                              attempts,
+                              firstFailureReason:
+                                imageFirstFailureRef.current[photo.id] ||
+                                "Kein Fehlversuch",
+                            });
+                          }, 300);
+                        });
+                      });
+                    }}
                         onError={(e) => {
                           const img = e.currentTarget;
 
