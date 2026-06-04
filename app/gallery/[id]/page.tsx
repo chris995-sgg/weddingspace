@@ -21,6 +21,13 @@ type Photo = {
   guestName: string;
 };
 
+type ImageAttemptReport = {
+  label: string;
+  success: boolean;
+  durationMs: number;
+  reason: string;
+};
+
 type ImageLoadReport = {
   photoId: string;
   guestName: string;
@@ -29,6 +36,7 @@ type ImageLoadReport = {
   attempts: number;
   durationMs: number;
   firstFailureReason: string;
+  attemptReports: ImageAttemptReport[];
 };
 
 const BATCH_SIZE = 6;
@@ -165,169 +173,201 @@ export default function GalleryPage() {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     async function preloadImage(
-      photo: Photo
-    ): Promise<ImageLoadReport> {
-      const startTime = performance.now();
-      let firstFailureReason = "";
+  photo: Photo
+): Promise<ImageLoadReport> {
+  const startTime = performance.now();
+  let firstFailureReason = "";
+  const attemptReports: ImageAttemptReport[] = [];
 
-      for (
-        let attempt = 1;
-        attempt <= PRELOAD_ATTEMPTS;
-        attempt++
-      ) {
-        const result = await new Promise<{
-          success: boolean;
-          reason: string;
-        }>((resolve) => {
-          const img = new Image();
+  for (
+    let attempt = 1;
+    attempt <= PRELOAD_ATTEMPTS;
+    attempt++
+  ) {
+    const attemptStartTime = performance.now();
 
-          img.decoding = "async";
+    const result = await new Promise<{
+      success: boolean;
+      reason: string;
+    }>((resolve) => {
+      const img = new Image();
 
-          const timeout = setTimeout(() => {
-            resolve({
-              success: false,
-              reason: `Versuch ${attempt}: Timeout nach ${PRELOAD_TIMEOUT_MS} ms`,
-            });
-          }, PRELOAD_TIMEOUT_MS);
+      img.decoding = "async";
 
-          img.onload = () => {
-            clearTimeout(timeout);
-            resolve({
-              success: true,
-              reason: "",
-            });
-          };
-
-          img.onerror = () => {
-            clearTimeout(timeout);
-            resolve({
-              success: false,
-              reason: `Versuch ${attempt}: Bild konnte nicht geladen werden`,
-            });
-          };
-
-          img.src = photo.imageUrl;
+      const timeout = setTimeout(() => {
+        resolve({
+          success: false,
+          reason: `Timeout nach ${PRELOAD_TIMEOUT_MS} ms`,
         });
+      }, PRELOAD_TIMEOUT_MS);
 
-        if (result.success) {
-          return {
-            photoId: photo.id,
-            guestName: photo.guestName || "Gast",
-            url: photo.imageUrl,
-            success: true,
-            attempts: attempt,
-            durationMs: Math.round(
-              performance.now() - startTime
-            ),
-            firstFailureReason:
-              firstFailureReason || "Kein Fehlversuch",
-          };
-        }
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: true,
+          reason: "Bild geladen",
+        });
+      };
 
-        if (!firstFailureReason) {
-          firstFailureReason = result.reason;
-        }
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: false,
+          reason: "Browser konnte Bild nicht laden",
+        });
+      };
 
-        if (attempt < PRELOAD_ATTEMPTS) {
-          await wait(PRELOAD_RETRY_DELAY_MS);
-        }
-      }
+      img.src = photo.imageUrl;
+    });
 
+    const attemptDurationMs = Math.round(
+      performance.now() - attemptStartTime
+    );
+
+    attemptReports.push({
+      label: `Normaler Versuch ${attempt}`,
+      success: result.success,
+      durationMs: attemptDurationMs,
+      reason: result.reason,
+    });
+
+    if (result.success) {
       return {
         photoId: photo.id,
         guestName: photo.guestName || "Gast",
         url: photo.imageUrl,
-        success: false,
-        attempts: PRELOAD_ATTEMPTS,
-        durationMs: Math.round(performance.now() - startTime),
+        success: true,
+        attempts: attempt,
+        durationMs: Math.round(
+          performance.now() - startTime
+        ),
         firstFailureReason:
-          firstFailureReason || "Bild wurde aufgegeben",
+          firstFailureReason || "Kein Fehlversuch",
+        attemptReports,
       };
     }
 
-    async function retryProblemImage(
-      photo: Photo
-    ): Promise<ImageLoadReport> {
-      const startTime = performance.now();
-      let firstFailureReason = "";
+    if (!firstFailureReason) {
+      firstFailureReason = `Normaler Versuch ${attempt}: ${result.reason}`;
+    }
 
-      for (
-        let attempt = 1;
-        attempt <= PROBLEM_RETRY_ATTEMPTS;
-        attempt++
-      ) {
-        const result = await new Promise<{
-          success: boolean;
-          reason: string;
-        }>((resolve) => {
-          const img = new Image();
+    if (attempt < PRELOAD_ATTEMPTS) {
+      await wait(PRELOAD_RETRY_DELAY_MS);
+    }
+  }
 
-          img.decoding = "async";
+  return {
+    photoId: photo.id,
+    guestName: photo.guestName || "Gast",
+    url: photo.imageUrl,
+    success: false,
+    attempts: PRELOAD_ATTEMPTS,
+    durationMs: Math.round(performance.now() - startTime),
+    firstFailureReason:
+      firstFailureReason || "Bild wurde aufgegeben",
+    attemptReports,
+  };
+}
+async function retryProblemImage(
+  photo: Photo
+): Promise<ImageLoadReport> {
+  const startTime = performance.now();
+  let firstFailureReason = "";
+  const attemptReports: ImageAttemptReport[] = [];
 
-          const timeout = setTimeout(() => {
-            resolve({
-              success: false,
-              reason: `Langsamer Nachversuch ${attempt}: Timeout nach ${PROBLEM_RETRY_TIMEOUT_MS} ms`,
-            });
-          }, PROBLEM_RETRY_TIMEOUT_MS);
+  for (
+    let attempt = 1;
+    attempt <= PROBLEM_RETRY_ATTEMPTS;
+    attempt++
+  ) {
+    const attemptStartTime = performance.now();
 
-          img.onload = () => {
-            clearTimeout(timeout);
-            resolve({
-              success: true,
-              reason: "",
-            });
-          };
+    const result = await new Promise<{
+      success: boolean;
+      reason: string;
+    }>((resolve) => {
+      const img = new Image();
 
-          img.onerror = () => {
-            clearTimeout(timeout);
-            resolve({
-              success: false,
-              reason: `Langsamer Nachversuch ${attempt}: Bild konnte nicht geladen werden`,
-            });
-          };
+      img.decoding = "async";
 
-          img.src = `${photo.imageUrl}${
-            photo.imageUrl.includes("?") ? "&" : "?"
-          }problemRetry=${Date.now()}-${attempt}`;
+      const timeout = setTimeout(() => {
+        resolve({
+          success: false,
+          reason: `Timeout nach ${PROBLEM_RETRY_TIMEOUT_MS} ms`,
         });
+      }, PROBLEM_RETRY_TIMEOUT_MS);
 
-        if (result.success) {
-          return {
-            photoId: photo.id,
-            guestName: photo.guestName || "Gast",
-            url: photo.imageUrl,
-            success: true,
-            attempts: attempt,
-            durationMs: Math.round(
-              performance.now() - startTime
-            ),
-            firstFailureReason:
-              firstFailureReason || "Beim Nachversuch geladen",
-          };
-        }
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: true,
+          reason: "Bild im langsamen Nachversuch geladen",
+        });
+      };
 
-        if (!firstFailureReason) {
-          firstFailureReason = result.reason;
-        }
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: false,
+          reason:
+            "Browser konnte Bild im langsamen Nachversuch nicht laden",
+        });
+      };
 
-        if (attempt < PROBLEM_RETRY_ATTEMPTS) {
-          await wait(PROBLEM_RETRY_DELAY_MS);
-        }
-      }
+      img.src = `${photo.imageUrl}${
+        photo.imageUrl.includes("?") ? "&" : "?"
+      }problemRetry=${Date.now()}-${attempt}`;
+    });
 
+    const attemptDurationMs = Math.round(
+      performance.now() - attemptStartTime
+    );
+
+    attemptReports.push({
+      label: `Langsamer Nachversuch ${attempt}`,
+      success: result.success,
+      durationMs: attemptDurationMs,
+      reason: result.reason,
+    });
+
+    if (result.success) {
       return {
         photoId: photo.id,
         guestName: photo.guestName || "Gast",
         url: photo.imageUrl,
-        success: false,
-        attempts: PROBLEM_RETRY_ATTEMPTS,
-        durationMs: Math.round(performance.now() - startTime),
+        success: true,
+        attempts: attempt,
+        durationMs: Math.round(
+          performance.now() - startTime
+        ),
         firstFailureReason:
-          firstFailureReason ||
-          "Auch im langsamen Nachversuch fehlgeschlagen",
+          firstFailureReason || "Beim Nachversuch geladen",
+        attemptReports,
       };
     }
+
+    if (!firstFailureReason) {
+      firstFailureReason = `Langsamer Nachversuch ${attempt}: ${result.reason}`;
+    }
+
+    if (attempt < PROBLEM_RETRY_ATTEMPTS) {
+      await wait(PROBLEM_RETRY_DELAY_MS);
+    }
+  }
+
+  return {
+    photoId: photo.id,
+    guestName: photo.guestName || "Gast",
+    url: photo.imageUrl,
+    success: false,
+    attempts: PROBLEM_RETRY_ATTEMPTS,
+    durationMs: Math.round(performance.now() - startTime),
+    firstFailureReason:
+      firstFailureReason ||
+      "Auch im langsamen Nachversuch fehlgeschlagen",
+    attemptReports,
+  };
+}
 
     async function loadBatches() {
       setDisplayedPhotoIds([]);
@@ -742,14 +782,54 @@ export default function GalleryPage() {
                     Versuche: {report.attempts}
                   </p>
 
-                  <p className="text-sm">
-                    Erster Fehlversuch:{" "}
-                    {report.firstFailureReason}
-                  </p>
+                <p className="text-sm">
+  Erster Fehlversuch:{" "}
+  {report.firstFailureReason}
+</p>
 
-                  <p className="text-xs mt-2 break-all text-[#6b5c4d]">
-                    {report.url}
-                  </p>
+<div className="mt-3 bg-white/70 rounded-xl p-3 border border-[#e0d4c3]">
+  <p className="text-sm font-bold mb-2">
+    Einzelne Versuche:
+  </p>
+
+  <div className="space-y-2">
+    {report.attemptReports.map((attempt, attemptIndex) => (
+      <div
+        key={attemptIndex}
+        className="text-xs bg-white rounded-lg p-2 border border-[#eadfce]"
+      >
+        <p className="font-bold">
+          {attempt.label}
+        </p>
+
+        <p>
+          Status:{" "}
+          <span
+            className={
+              attempt.success
+                ? "text-green-700"
+                : "text-red-700"
+            }
+          >
+            {attempt.success ? "geladen" : "fehlgeschlagen"}
+          </span>
+        </p>
+
+        <p>
+          Dauer: {attempt.durationMs} ms
+        </p>
+
+        <p>
+          Grund: {attempt.reason}
+        </p>
+      </div>
+    ))}
+  </div>
+</div>
+
+<p className="text-xs mt-2 break-all text-[#6b5c4d]">
+  {report.url}
+</p>
                 </div>
               ))}
             </div>
