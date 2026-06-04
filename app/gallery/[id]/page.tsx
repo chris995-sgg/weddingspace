@@ -31,12 +31,12 @@ type ImageLoadReport = {
   firstFailureReason: string;
 };
 
-const BATCH_SIZE = 4;
-const PRELOAD_ATTEMPTS = 3;
-const PRELOAD_TIMEOUT_MS = 800;
+const BATCH_SIZE = 6;
+const PRELOAD_ATTEMPTS = 5;
+const PRELOAD_TIMEOUT_MS = 1000;
 const PRELOAD_RETRY_DELAY_MS = 100;
 
-const PROBLEM_RETRY_ATTEMPTS = 5;
+const PROBLEM_RETRY_ATTEMPTS = 10;
 const PROBLEM_RETRY_TIMEOUT_MS = 5000;
 const PROBLEM_RETRY_DELAY_MS = 500;
 
