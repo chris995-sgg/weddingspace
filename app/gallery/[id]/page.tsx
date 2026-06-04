@@ -21,23 +21,45 @@ type Photo = {
   guestName: string;
 };
 
-const BATCH_SIZE = 8;
-const PRELOAD_ATTEMPTS = 10;
-const PRELOAD_TIMEOUT_MS = 1500;
-const PRELOAD_RETRY_DELAY_MS = 100;
+type ImageAttemptReport = {
+  label: string;
+  success: boolean;
+  durationMs: number;
+  reason: string;
+};
 
-const IMG_RETRIES = 5;
-const IMG_RETRY_DELAY_MS = 100;
+type ImageLoadReport = {
+  photoId: string;
+  guestName: string;
+  url: string;
+  success: boolean;
+  attempts: number;
+  durationMs: number;
+  firstFailureReason: string;
+  attemptReports: ImageAttemptReport[];
+};
+
+const BATCH_SIZE = 2;
+const PRELOAD_ATTEMPTS = 10;
+const PRELOAD_TIMEOUT_MS = 2000;
+const PRELOAD_RETRY_DELAY_MS = 50;
+
+const PROBLEM_RETRY_ATTEMPTS = 10;
+const PROBLEM_RETRY_TIMEOUT_MS = 5000;
+const PROBLEM_RETRY_DELAY_MS = 200;
+
+const VISIBLE_IMG_RETRIES = 5;
+const VISIBLE_IMG_RETRY_DELAY_MS = 100;
 
 export default function GalleryPage() {
   const params = useParams();
 
   const weddingId = params.id as string;
 
-  const [visibleCount, setVisibleCount] = useState(0);
-  const [loadedPhotoIds, setLoadedPhotoIds] = useState<string[]>(
-    []
-  );
+  const [displayedPhotoIds, setDisplayedPhotoIds] =
+    useState<string[]>([]);
+  const [completedImageCount, setCompletedImageCount] =
+    useState(0);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [eventTitle, setEventTitle] = useState("");
@@ -49,6 +71,15 @@ export default function GalleryPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showInitialLoader, setShowInitialLoader] =
     useState(true);
+
+  const [imageLoadReports, setImageLoadReports] =
+    useState<ImageLoadReport[]>([]);
+  const [showLoadReport, setShowLoadReport] =
+    useState(false);
+  const [
+    totalImageLoadDurationMs,
+    setTotalImageLoadDurationMs,
+  ] = useState(0);
 
   const [galleryVisibilityMode, setGalleryVisibilityMode] =
     useState<"instant" | "date">("instant");
@@ -136,94 +167,300 @@ export default function GalleryPage() {
   }, [weddingId]);
 
   useEffect(() => {
-    if (photos.length === 0) {
-      setVisibleCount(0);
-      setLoadedPhotoIds([]);
-      setShowInitialLoader(false);
-      return;
-    }
-
     let cancelled = false;
 
     const wait = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
-    function markPhotoLoaded(photoId: string) {
-      setLoadedPhotoIds((prev) =>
-        prev.includes(photoId) ? prev : [...prev, photoId]
-      );
+    async function preloadImage(
+  photo: Photo
+): Promise<ImageLoadReport> {
+  const startTime = performance.now();
+  let firstFailureReason = "";
+  const attemptReports: ImageAttemptReport[] = [];
+
+  for (
+    let attempt = 1;
+    attempt <= PRELOAD_ATTEMPTS;
+    attempt++
+  ) {
+    const attemptStartTime = performance.now();
+
+    const result = await new Promise<{
+      success: boolean;
+      reason: string;
+    }>((resolve) => {
+      const img = new Image();
+
+      img.decoding = "async";
+
+      const timeout = setTimeout(() => {
+        resolve({
+          success: false,
+          reason: `Timeout nach ${PRELOAD_TIMEOUT_MS} ms`,
+        });
+      }, PRELOAD_TIMEOUT_MS);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: true,
+          reason: "Bild geladen",
+        });
+      };
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: false,
+          reason: "Browser konnte Bild nicht laden",
+        });
+      };
+
+      img.src = photo.imageUrl;
+    });
+
+    const attemptDurationMs = Math.round(
+      performance.now() - attemptStartTime
+    );
+
+    attemptReports.push({
+      label: `Normaler Versuch ${attempt}`,
+      success: result.success,
+      durationMs: attemptDurationMs,
+      reason: result.reason,
+    });
+
+    if (result.success) {
+      return {
+        photoId: photo.id,
+        guestName: photo.guestName || "Gast",
+        url: photo.imageUrl,
+        success: true,
+        attempts: attempt,
+        durationMs: Math.round(
+          performance.now() - startTime
+        ),
+        firstFailureReason:
+          firstFailureReason || "Kein Fehlversuch",
+        attemptReports,
+      };
     }
 
-    async function preloadImage(photo: Photo): Promise<boolean> {
-      for (
-        let attempt = 1;
-        attempt <= PRELOAD_ATTEMPTS;
-        attempt++
-      ) {
-        const success = await new Promise<boolean>((resolve) => {
-          const img = new Image();
+    if (!firstFailureReason) {
+      firstFailureReason = `Normaler Versuch ${attempt}: ${result.reason}`;
+    }
 
-          img.decoding = "async";
+    if (attempt < PRELOAD_ATTEMPTS) {
+      await wait(PRELOAD_RETRY_DELAY_MS);
+    }
+  }
 
-          const timeout = setTimeout(() => {
-            resolve(false);
-          }, PRELOAD_TIMEOUT_MS);
+  return {
+    photoId: photo.id,
+    guestName: photo.guestName || "Gast",
+    url: photo.imageUrl,
+    success: false,
+    attempts: PRELOAD_ATTEMPTS,
+    durationMs: Math.round(performance.now() - startTime),
+    firstFailureReason:
+      firstFailureReason || "Bild wurde aufgegeben",
+    attemptReports,
+  };
+}
+async function retryProblemImage(
+  photo: Photo
+): Promise<ImageLoadReport> {
+  const startTime = performance.now();
+  let firstFailureReason = "";
+  const attemptReports: ImageAttemptReport[] = [];
 
-          img.onload = () => {
-            clearTimeout(timeout);
-            resolve(true);
-          };
+  for (
+    let attempt = 1;
+    attempt <= PROBLEM_RETRY_ATTEMPTS;
+    attempt++
+  ) {
+    const attemptStartTime = performance.now();
 
-          img.onerror = () => {
-            clearTimeout(timeout);
-            resolve(false);
-          };
+    const result = await new Promise<{
+      success: boolean;
+      reason: string;
+    }>((resolve) => {
+      const img = new Image();
 
-          img.src = `${photo.imageUrl}${
-            photo.imageUrl.includes("?") ? "&" : "?"
-          }preload=${Date.now()}-${attempt}`;
+      img.decoding = "async";
+
+      const timeout = setTimeout(() => {
+        resolve({
+          success: false,
+          reason: `Timeout nach ${PROBLEM_RETRY_TIMEOUT_MS} ms`,
         });
+      }, PROBLEM_RETRY_TIMEOUT_MS);
 
-        if (success) {
-          markPhotoLoaded(photo.id);
-          return true;
-        }
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: true,
+          reason: "Bild im langsamen Nachversuch geladen",
+        });
+      };
 
-        if (attempt < PRELOAD_ATTEMPTS) {
-          await wait(PRELOAD_RETRY_DELAY_MS);
-        }
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: false,
+          reason:
+            "Browser konnte Bild im langsamen Nachversuch nicht laden",
+        });
+      };
+
+      img.src = `${photo.imageUrl}${
+        photo.imageUrl.includes("?") ? "&" : "?"
+      }problemRetry=${Date.now()}-${attempt}`;
+    });
+
+    const attemptDurationMs = Math.round(
+      performance.now() - attemptStartTime
+    );
+
+    attemptReports.push({
+      label: `Langsamer Nachversuch ${attempt}`,
+      success: result.success,
+      durationMs: attemptDurationMs,
+      reason: result.reason,
+    });
+
+    if (result.success) {
+      return {
+        photoId: photo.id,
+        guestName: photo.guestName || "Gast",
+        url: photo.imageUrl,
+        success: true,
+        attempts: attempt,
+        durationMs: Math.round(
+          performance.now() - startTime
+        ),
+        firstFailureReason:
+          firstFailureReason || "Beim Nachversuch geladen",
+        attemptReports,
+      };
+    }
+
+    if (!firstFailureReason) {
+      firstFailureReason = `Langsamer Nachversuch ${attempt}: ${result.reason}`;
+    }
+
+    if (attempt < PROBLEM_RETRY_ATTEMPTS) {
+      await wait(PROBLEM_RETRY_DELAY_MS);
+    }
+  }
+
+  return {
+    photoId: photo.id,
+    guestName: photo.guestName || "Gast",
+    url: photo.imageUrl,
+    success: false,
+    attempts: PROBLEM_RETRY_ATTEMPTS,
+    durationMs: Math.round(performance.now() - startTime),
+    firstFailureReason:
+      firstFailureReason ||
+      "Auch im langsamen Nachversuch fehlgeschlagen",
+    attemptReports,
+  };
+}
+
+    async function loadBatches() {
+      setDisplayedPhotoIds([]);
+      setCompletedImageCount(0);
+      setImageLoadReports([]);
+      setShowLoadReport(false);
+      setTotalImageLoadDurationMs(0);
+
+      if (photos.length === 0) {
+        setShowInitialLoader(false);
+        return;
       }
 
-      return false;
-    }
-
-    async function loadImages() {
-      setVisibleCount(0);
-      setLoadedPhotoIds([]);
       setShowInitialLoader(true);
+
+      const totalStartTime = performance.now();
+      const reports: ImageLoadReport[] = [];
+      const failedPhotos: Photo[] = [];
 
       for (let i = 0; i < photos.length; i += BATCH_SIZE) {
         if (cancelled) return;
 
         const batch = photos.slice(i, i + BATCH_SIZE);
 
-        await Promise.all(
+        const batchReports = await Promise.all(
           batch.map((photo) => preloadImage(photo))
         );
 
         if (cancelled) return;
 
-        setVisibleCount((prev) =>
-          Math.min(prev + batch.length, photos.length)
+        reports.push(...batchReports);
+
+        const successfulPhotoIds = batchReports
+          .filter((report) => report.success)
+          .map((report) => report.photoId);
+
+        const failedPhotoIds = batchReports
+          .filter((report) => !report.success)
+          .map((report) => report.photoId);
+
+        const failedBatchPhotos = batch.filter((photo) =>
+          failedPhotoIds.includes(photo.id)
+        );
+
+        failedPhotos.push(...failedBatchPhotos);
+
+        setDisplayedPhotoIds((prev) => [
+          ...prev,
+          ...successfulPhotoIds.filter(
+            (id) => !prev.includes(id)
+          ),
+        ]);
+
+        setCompletedImageCount((prev) =>
+          Math.min(prev + batchReports.length, photos.length)
         );
 
         setShowInitialLoader(false);
 
-        await wait(50);
+        await wait(100);
       }
+
+      if (cancelled) return;
+
+      if (failedPhotos.length > 0) {
+        const retryReports = await Promise.all(
+          failedPhotos.map((photo) => retryProblemImage(photo))
+        );
+
+        if (cancelled) return;
+
+        reports.push(...retryReports);
+
+        const recoveredPhotoIds = retryReports
+          .filter((report) => report.success)
+          .map((report) => report.photoId);
+
+        setDisplayedPhotoIds((prev) => [
+          ...prev,
+          ...recoveredPhotoIds.filter(
+            (id) => !prev.includes(id)
+          ),
+        ]);
+      }
+
+      setImageLoadReports(reports);
+      setTotalImageLoadDurationMs(
+        Math.round(performance.now() - totalStartTime)
+      );
+      setShowLoadReport(true);
     }
 
-    loadImages();
+    loadBatches();
 
     return () => {
       cancelled = true;
@@ -231,7 +468,7 @@ export default function GalleryPage() {
   }, [photos]);
 
   useEffect(() => {
-    if (selectedPhoto) {
+    if (selectedPhoto || showLoadReport) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -240,32 +477,7 @@ export default function GalleryPage() {
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [selectedPhoto]);
-
-  function markPhotoLoaded(photoId: string) {
-    setLoadedPhotoIds((prev) =>
-      prev.includes(photoId) ? prev : [...prev, photoId]
-    );
-  }
-
-  function retryImageLoad(
-    img: HTMLImageElement,
-    url: string
-  ) {
-    const currentRetry = Number(img.dataset.retry || "0");
-
-    if (currentRetry >= IMG_RETRIES) {
-      return;
-    }
-
-    img.dataset.retry = String(currentRetry + 1);
-
-    setTimeout(() => {
-      img.src = `${url}${url.includes("?") ? "&" : "?"}retry=${Date.now()}-${
-        currentRetry + 1
-      }`;
-    }, IMG_RETRY_DELAY_MS);
-  }
+  }, [selectedPhoto, showLoadReport]);
 
   function showNextPhoto() {
     if (selectedIndex === -1) return;
@@ -414,93 +626,225 @@ export default function GalleryPage() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-              {photos.slice(0, visibleCount).map((photo) => {
-                const isSelected =
-                  selectedPhotoIds.includes(photo.id);
+              {photos
+                .filter((photo) =>
+                  displayedPhotoIds.includes(photo.id)
+                )
+                .map((photo) => {
+                  const isSelected =
+                    selectedPhotoIds.includes(photo.id);
 
-                return (
-                  <div key={photo.id} className="relative">
-                    <button
-                      onClick={() => setSelectedPhoto(photo)}
-                      className="w-full max-h-[65vh] md:max-h-[75vh] object-contain rounded-[1.5rem] bg-black/30 overflow-hidden"
-                    >
-                      <img
-                        src={photo.imageUrl}
-                        loading="eager"
-                        decoding="async"
-                        alt=""
-                        onLoad={() => markPhotoLoaded(photo.id)}
-                        onError={(e) =>
-                          retryImageLoad(
-                            e.currentTarget,
-                            photo.imageUrl
-                          )
-                        }
-                        className={`w-full h-64 object-cover rounded-2xl transition ${
-                          shouldBlurPhotos ? "blur-sm" : ""
-                        }`}
-                      />
+                  return (
+                    <div key={photo.id} className="relative">
+                      <button
+                        onClick={() => setSelectedPhoto(photo)}
+                        className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
+                      >
+                        <img
+                          src={photo.imageUrl}
+                          loading="eager"
+                          decoding="async"
+                          alt=""
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            const currentRetry = Number(
+                              img.dataset.retry || "0"
+                            );
 
-                      {shouldBlurPhotos && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
-                          <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
-                            <p>Sichtbar ab</p>
-                            <p>{galleryRevealDateText} Uhr</p>
+                            if (
+                              currentRetry >=
+                              VISIBLE_IMG_RETRIES
+                            ) {
+                              return;
+                            }
+
+                            img.dataset.retry = String(
+                              currentRetry + 1
+                            );
+
+                            setTimeout(() => {
+                              img.src = `${photo.imageUrl}${
+                                photo.imageUrl.includes("?")
+                                  ? "&"
+                                  : "?"
+                              }retry=${Date.now()}`;
+                            }, VISIBLE_IMG_RETRY_DELAY_MS);
+                          }}
+                          className={`w-full h-64 object-cover rounded-2xl transition ${
+                            shouldBlurPhotos ? "blur-sm" : ""
+                          }`}
+                        />
+
+                        {shouldBlurPhotos && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+                            <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
+                              <p>Sichtbar ab</p>
+                              <p>
+                                {galleryRevealDateText} Uhr
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </button>
+                        )}
+                      </button>
 
-                    <button
-                      onClick={() =>
-                        togglePhotoSelection(photo.id)
-                      }
-                      className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
-                        isSelected
-                          ? "bg-[#c8ad72] border-white"
-                          : "bg-white/80 border-white"
-                      }`}
-                    >
-                      {isSelected ? "✓" : ""}
-                    </button>
+                      <button
+                        onClick={() =>
+                          togglePhotoSelection(photo.id)
+                        }
+                        className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
+                          isSelected
+                            ? "bg-[#c8ad72] border-white"
+                            : "bg-white/80 border-white"
+                        }`}
+                      >
+                        {isSelected ? "✓" : ""}
+                      </button>
 
-                    <p className="mt-2 text-center text-sm text-[#6b5c4d]">
-                      {photo.guestName}
-                    </p>
-                  </div>
-                );
-              })}
+                      <p className="mt-2 text-center text-sm text-[#6b5c4d]">
+                        {photo.guestName || "Gast"}
+                      </p>
+                    </div>
+                  );
+                })}
             </div>
 
-            <div className="mt-8 text-center">
-              <p className="text-[#3b3128]/70 font-semibold">
-                {loadedPhotoIds.length} von {photos.length} Bildern geladen
-              </p>
+          <div className="mt-8 text-center">
+        <p className="text-[#3b3128]/70 font-semibold">
+          {displayedPhotoIds.length} von {photos.length} Bildern geladen
+        </p>
 
-              {visibleCount < photos.length && (
-                <p className="text-[#3b3128]/50 text-sm mt-1">
-                  Weitere Bilder werden geladen...
-                </p>
-              )}
+        {completedImageCount < photos.length && (
+          <p className="text-[#3b3128]/50 text-sm mt-1">
+            Weitere Bilder werden geprüft...
+          </p>
+        )}
 
-              {visibleCount >= photos.length &&
-                loadedPhotoIds.length < photos.length && (
-                  <p className="text-[#8a5a44] text-sm mt-1 font-semibold">
-                    {photos.length - loadedPhotoIds.length} Bild
-                    {photos.length - loadedPhotoIds.length === 1
-                      ? ""
-                      : "er"}{" "}
-                    konnte
-                    {photos.length - loadedPhotoIds.length === 1
-                      ? ""
-                      : "n"}{" "}
-                    nicht geladen werden.
-                  </p>
-                )}
-            </div>
+        {completedImageCount >= photos.length &&
+          displayedPhotoIds.length < photos.length && (
+            <p className="text-[#8a5a44] text-sm mt-1 font-semibold">
+              {photos.length - displayedPhotoIds.length} Bild
+              {photos.length - displayedPhotoIds.length === 1 ? "" : "er"} konnte
+              {photos.length - displayedPhotoIds.length === 1 ? "" : "n"} nicht geladen werden.
+            </p>
+          )}
+      </div>
           </>
         )}
       </div>
+
+      {showLoadReport && (
+        <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-white rounded-[2rem] p-6 shadow-2xl text-[#3b3128]">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  Bilder-Ladebericht
+                </h2>
+
+                <p className="text-sm text-[#6b5c4d] mt-1">
+                  Gesamtzeit: {totalImageLoadDurationMs} ms
+                </p>
+
+                <p className="text-sm text-[#6b5c4d]">
+                  Berichte: {imageLoadReports.length}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowLoadReport(false)}
+                className="bg-[#c8ad72] text-white px-4 py-2 rounded-2xl font-bold"
+              >
+                Schließen
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {imageLoadReports.map((report, index) => (
+                <div
+                  key={`${report.photoId}-${index}`}
+                  className="bg-[#f7f1e8] border border-[#e0d4c3] rounded-2xl p-4"
+                >
+                  <p className="font-bold">
+                    Bericht {index + 1} — {report.guestName}
+                  </p>
+
+                  <p className="text-sm mt-1">
+                    Status:{" "}
+                    <span
+                      className={
+                        report.success
+                          ? "text-green-700"
+                          : "text-red-700"
+                      }
+                    >
+                      {report.success
+                        ? "geladen"
+                        : "aufgegeben"}
+                    </span>
+                  </p>
+
+                  <p className="text-sm">
+                    Ladezeit: {report.durationMs} ms
+                  </p>
+
+                  <p className="text-sm">
+                    Versuche: {report.attempts}
+                  </p>
+
+                <p className="text-sm">
+  Erster Fehlversuch:{" "}
+  {report.firstFailureReason}
+</p>
+
+<div className="mt-3 bg-white/70 rounded-xl p-3 border border-[#e0d4c3]">
+  <p className="text-sm font-bold mb-2">
+    Einzelne Versuche:
+  </p>
+
+  <div className="space-y-2">
+    {report.attemptReports.map((attempt, attemptIndex) => (
+      <div
+        key={attemptIndex}
+        className="text-xs bg-white rounded-lg p-2 border border-[#eadfce]"
+      >
+        <p className="font-bold">
+          {attempt.label}
+        </p>
+
+        <p>
+          Status:{" "}
+          <span
+            className={
+              attempt.success
+                ? "text-green-700"
+                : "text-red-700"
+            }
+          >
+            {attempt.success ? "geladen" : "fehlgeschlagen"}
+          </span>
+        </p>
+
+        <p>
+          Dauer: {attempt.durationMs} ms
+        </p>
+
+        <p>
+          Grund: {attempt.reason}
+        </p>
+      </div>
+    ))}
+  </div>
+</div>
+
+<p className="text-xs mt-2 break-all text-[#6b5c4d]">
+  {report.url}
+</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedPhoto && (
         <div className="fixed inset-0 bg-black/85 z-50 overflow-hidden flex items-center justify-center px-4 pt-24 pb-28 md:py-8">
@@ -535,13 +879,6 @@ export default function GalleryPage() {
             <img
               src={selectedPhoto.imageUrl}
               alt=""
-              onLoad={() => markPhotoLoaded(selectedPhoto.id)}
-              onError={(e) =>
-                retryImageLoad(
-                  e.currentTarget,
-                  selectedPhoto.imageUrl
-                )
-              }
               className={`max-w-full max-h-[62vh] md:max-h-[78vh] object-contain rounded-[1.5rem] shadow-2xl transition ${
                 shouldBlurPhotos ? "blur-sm" : ""
               }`}
