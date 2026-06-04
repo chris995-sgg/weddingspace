@@ -116,9 +116,9 @@ export default function GalleryPage() {
           const timeout = setTimeout(() => {
             resolve({
               success: false,
-              reason: `Versuch ${attempt}: Timeout nach 500 ms`,
+              reason: `Versuch ${attempt}: Timeout nach 1500 ms`,
             });
-          }, 1000);
+          }, 1500);
 
           img.onload = () => {
             clearTimeout(timeout);
@@ -159,7 +159,7 @@ export default function GalleryPage() {
         }
 
         if (attempt < 10) {
-          await wait(100);
+          await wait(50);
         }
       }
 
@@ -216,7 +216,7 @@ export default function GalleryPage() {
           return next;
         });
 
-        await wait(500);
+        await wait(100);
       }
 
       if (cancelled) return;
