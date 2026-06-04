@@ -39,9 +39,9 @@ type ImageLoadReport = {
   attemptReports: ImageAttemptReport[];
 };
 
-const CONCURRENT_LOADS = 5;
+const CONCURRENT_LOADS = 3;
 
-const PRELOAD_ATTEMPTS = 10;
+const PRELOAD_ATTEMPTS = 20;
 const PRELOAD_TIMEOUT_MS = 1500;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
@@ -322,15 +322,21 @@ export default function GalleryPage() {
 
               setCompletedImageCount(completedCount);
 
-              if (report.success) {
-                setDisplayedPhotoIds((prev) =>
-                  prev.includes(report.photoId)
-                    ? prev
-                    : [...prev, report.photoId]
-                );
+                if (report.success) {
+                  setDisplayedPhotoIds((prev) => {
+                    if (prev.includes(report.photoId)) {
+                      return prev;
+                    }
 
-                setShowInitialLoader(false);
-              }
+                    const next = [...prev, report.photoId];
+
+                    if (next.length >= Math.min(8, photos.length)) {
+                      setShowInitialLoader(false);
+                    }
+
+                    return next;
+                  });
+                }
 
               if (completedCount >= photos.length) {
                 setShowInitialLoader(false);
@@ -352,7 +358,7 @@ export default function GalleryPage() {
       setTotalImageLoadDurationMs(
         Math.round(performance.now() - totalStartTime)
       );
-      setShowLoadReport(true);
+      setShowLoadReport(false);
     }
 
     loadImagesWithLimit();
@@ -632,6 +638,15 @@ export default function GalleryPage() {
           </>
         )}
       </div>
+
+      {isLoggedIn && imageLoadReports.length > 0 && !showLoadReport && (
+  <button
+    onClick={() => setShowLoadReport(true)}
+    className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
+  >
+    Ladebericht
+  </button>
+)}
 
       {showLoadReport && (
         <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
