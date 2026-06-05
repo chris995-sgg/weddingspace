@@ -45,6 +45,11 @@ const PRELOAD_ATTEMPTS = 20;
 const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
+const FINAL_RETRY_CONCURRENT_LOADS = 4;
+const FINAL_RETRY_ATTEMPTS = 10;
+const FINAL_RETRY_TIMEOUT_MS = 3000;
+const FINAL_RETRY_DELAY_MS = 100;
+
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
 
@@ -177,102 +182,101 @@ export default function GalleryPage() {
     const wait = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
-    async function preloadImage(
-      photo: Photo
-    ): Promise<ImageLoadReport> {
-      const startTime = performance.now();
-      let firstFailureReason = "";
-      const attemptReports: ImageAttemptReport[] = [];
+async function preloadImage(
+  photo: Photo,
+  maxAttempts = PRELOAD_ATTEMPTS,
+  timeoutMs = PRELOAD_TIMEOUT_MS,
+  retryDelayMs = PRELOAD_RETRY_DELAY_MS,
+  labelPrefix = "Versuch"
+): Promise<ImageLoadReport> {
+  const startTime = performance.now();
+  let firstFailureReason = "";
+  const attemptReports: ImageAttemptReport[] = [];
 
-      for (
-        let attempt = 1;
-        attempt <= PRELOAD_ATTEMPTS;
-        attempt++
-      ) {
-        const attemptStartTime = performance.now();
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const attemptStartTime = performance.now();
 
-        const result = await new Promise<{
-          success: boolean;
-          reason: string;
-        }>((resolve) => {
-          const img = new Image();
+    const result = await new Promise<{
+      success: boolean;
+      reason: string;
+    }>((resolve) => {
+      const img = new Image();
 
-          img.decoding = "async";
+      img.decoding = "async";
 
-          const timeout = setTimeout(() => {
-            resolve({
-              success: false,
-              reason: `Timeout nach ${PRELOAD_TIMEOUT_MS} ms`,
-            });
-          }, PRELOAD_TIMEOUT_MS);
-
-          img.onload = () => {
-            clearTimeout(timeout);
-            resolve({
-              success: true,
-              reason: "Bild geladen",
-            });
-          };
-
-          img.onerror = () => {
-            clearTimeout(timeout);
-            resolve({
-              success: false,
-              reason: "Browser konnte Bild nicht laden",
-            });
-          };
-
-          img.src = photo.imageUrl;
+      const timeout = setTimeout(() => {
+        resolve({
+          success: false,
+          reason: `Timeout nach ${timeoutMs} ms`,
         });
+      }, timeoutMs);
 
-        const attemptDurationMs = Math.round(
-          performance.now() - attemptStartTime
-        );
-
-        attemptReports.push({
-          label: `Versuch ${attempt}`,
-          success: result.success,
-          durationMs: attemptDurationMs,
-          reason: result.reason,
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: true,
+          reason: "Bild geladen",
         });
+      };
 
-        if (result.success) {
-          return {
-            photoId: photo.id,
-            guestName: photo.guestName || "Gast",
-            url: photo.imageUrl,
-            success: true,
-            attempts: attempt,
-            durationMs: Math.round(
-              performance.now() - startTime
-            ),
-            firstFailureReason:
-              firstFailureReason || "Kein Fehlversuch",
-            attemptReports,
-          };
-        }
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({
+          success: false,
+          reason: "Browser konnte Bild nicht laden",
+        });
+      };
 
-        if (!firstFailureReason) {
-          firstFailureReason = `Versuch ${attempt}: ${result.reason}`;
-        }
+      img.src = photo.imageUrl;
+    });
 
-        if (attempt < PRELOAD_ATTEMPTS) {
-          await wait((PRELOAD_RETRY_DELAY_MS*attempt));
-        }
-      }
+    const attemptDurationMs = Math.round(
+      performance.now() - attemptStartTime
+    );
 
+    attemptReports.push({
+      label: `${labelPrefix} ${attempt}`,
+      success: result.success,
+      durationMs: attemptDurationMs,
+      reason: result.reason,
+    });
+
+    if (result.success) {
       return {
         photoId: photo.id,
         guestName: photo.guestName || "Gast",
         url: photo.imageUrl,
-        success: false,
-        attempts: PRELOAD_ATTEMPTS,
+        success: true,
+        attempts: attempt,
         durationMs: Math.round(performance.now() - startTime),
         firstFailureReason:
-          firstFailureReason || "Bild wurde aufgegeben",
+          firstFailureReason || "Kein Fehlversuch",
         attemptReports,
       };
     }
+
+    if (!firstFailureReason) {
+      firstFailureReason = `${labelPrefix} ${attempt}: ${result.reason}`;
+    }
+
+    if (attempt < maxAttempts) {
+      await wait(retryDelayMs * attempt);
+    }
+  }
+
+  return {
+    photoId: photo.id,
+    guestName: photo.guestName || "Gast",
+    url: photo.imageUrl,
+    success: false,
+    attempts: maxAttempts,
+    durationMs: Math.round(performance.now() - startTime),
+    firstFailureReason:
+      firstFailureReason || "Bild wurde aufgegeben",
+    attemptReports,
+  };
+}
+
 
     async function loadImagesWithLimit() {
       setDisplayedPhotoIds([]);
@@ -290,6 +294,7 @@ export default function GalleryPage() {
 
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
+      const failedPhotos: Photo[] = [];
 
       let nextIndex = 0;
       let activeCount = 0;
@@ -324,23 +329,25 @@ export default function GalleryPage() {
               setCompletedImageCount(completedCount);
 
                 if (report.success) {
-                  setDisplayedPhotoIds((prev) => {
-                    if (prev.includes(report.photoId)) {
-                      return prev;
-                    }
+        setDisplayedPhotoIds((prev) => {
+          if (prev.includes(report.photoId)) {
+            return prev;
+          }
 
-                    const next = [...prev, report.photoId];
+          const next = [...prev, report.photoId];
 
-                    if (next.length >= Math.min(8, photos.length)) {
-                      setShowInitialLoader(false);
-                    }
+          if (next.length >= Math.min(8, photos.length)) {
+            setShowInitialLoader(false);
+          }
 
-                    return next;
-                  });
-                }
+          return next;
+        });
+      } else {
+        failedPhotos.push(photo);
+      }
 
               if (completedCount >= photos.length) {
-                setShowInitialLoader(false);
+               
                 resolve();
                 return;
               }
@@ -353,13 +360,83 @@ export default function GalleryPage() {
         startNext();
       });
 
-      if (cancelled) return;
+     
+          if (cancelled) return;
 
-      setImageLoadReports(reports);
-      setTotalImageLoadDurationMs(
-        Math.round(performance.now() - totalStartTime)
-      );
-      setShowLoadReport(false);
+          if (failedPhotos.length > 0) {
+            let retryNextIndex = 0;
+            let retryActiveCount = 0;
+            let retryCompletedCount = 0;
+
+            await new Promise<void>((resolve) => {
+              function startNextRetry() {
+                if (cancelled) {
+                  resolve();
+                  return;
+                }
+
+                while (
+                  retryActiveCount < FINAL_RETRY_CONCURRENT_LOADS &&
+                  retryNextIndex < failedPhotos.length
+                ) {
+                  const photo = failedPhotos[retryNextIndex];
+
+                  retryNextIndex++;
+                  retryActiveCount++;
+
+                  preloadImage(
+                    photo,
+                    FINAL_RETRY_ATTEMPTS,
+                    FINAL_RETRY_TIMEOUT_MS,
+                    FINAL_RETRY_DELAY_MS,
+                    "Finaler Nachversuch"
+                  ).then((report) => {
+                    if (cancelled) {
+                      resolve();
+                      return;
+                    }
+
+                    reports.push(report);
+
+                    retryCompletedCount++;
+                    retryActiveCount--;
+
+                    if (report.success) {
+                      setDisplayedPhotoIds((prev) => {
+                        if (prev.includes(report.photoId)) {
+                          return prev;
+                        }
+
+                        return [...prev, report.photoId];
+                      });
+                    }
+
+                    if (
+                      retryCompletedCount >= failedPhotos.length &&
+                      retryActiveCount === 0
+                    ) {
+                      resolve();
+                      return;
+                    }
+
+                    startNextRetry();
+                  });
+                }
+              }
+
+              startNextRetry();
+            });
+          }
+
+          if (cancelled) return;
+
+          setImageLoadReports(reports);
+          setTotalImageLoadDurationMs(
+            Math.round(performance.now() - totalStartTime)
+          );
+          setShowLoadReport(false);
+          setShowInitialLoader(false);
+
     }
 
     loadImagesWithLimit();
