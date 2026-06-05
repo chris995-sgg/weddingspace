@@ -42,7 +42,7 @@ type ImageLoadReport = {
 const CONCURRENT_LOADS = 8;
 
 const PRELOAD_ATTEMPTS = 30;
-const PRELOAD_TIMEOUT_MS = 1000;
+const PRELOAD_TIMEOUT_MS = 500;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
 const VISIBLE_IMG_RETRIES = 5;
@@ -257,7 +257,7 @@ export default function GalleryPage() {
         }
 
         if (attempt < PRELOAD_ATTEMPTS) {
-          await wait(PRELOAD_RETRY_DELAY_MS*attempt);
+          await wait((PRELOAD_RETRY_DELAY_MS*attempt));
         }
       }
 
