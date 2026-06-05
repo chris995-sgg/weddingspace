@@ -46,9 +46,9 @@ const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
 const FINAL_RETRY_CONCURRENT_LOADS = 4;
-const FINAL_RETRY_ATTEMPTS = 10;
-const FINAL_RETRY_TIMEOUT_MS = 3000;
-const FINAL_RETRY_DELAY_MS = 100;
+const FINAL_RETRY_ATTEMPTS = 20;
+const FINAL_RETRY_TIMEOUT_MS = 4000;
+const FINAL_RETRY_DELAY_MS = 200;
 
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
@@ -623,48 +623,60 @@ async function preloadImage(
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-              {photos
-                .filter((photo) =>
-                  displayedPhotoIds.includes(photo.id)
-                )
-                .map((photo) => {
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
+                {photos.map((photo) => {
                   const isSelected =
                     selectedPhotoIds.includes(photo.id);
 
+                  const isLoaded =
+                    displayedPhotoIds.includes(photo.id);
+
                   return (
                     <div key={photo.id} className="relative">
-                      <button
-                        onClick={() => setSelectedPhoto(photo)}
-                        className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
-                      >
-                        <img
-                          src={photo.imageUrl}
-                          loading="eager"
-                          decoding="async"
-                          alt=""
-                          onError={(e) =>
-                            retryVisibleImage(
-                              e.currentTarget,
-                              photo.imageUrl
-                            )
-                          }
-                          className={`w-full h-64 object-cover rounded-2xl transition ${
-                            shouldBlurPhotos ? "blur-sm" : ""
-                          }`}
-                        />
+                <button
+                  onClick={() => {
+                    if (isLoaded) {
+                      setSelectedPhoto(photo);
+                    }
+                  }}
+                  disabled={!isLoaded}
+                  className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden disabled:cursor-default"
+                >
+                  {isLoaded ? (
+                    <>
+                      <img
+                        src={photo.imageUrl}
+                        loading="eager"
+                        decoding="async"
+                        alt=""
+                        onError={(e) =>
+                          retryVisibleImage(
+                            e.currentTarget,
+                            photo.imageUrl
+                          )
+                        }
+                        className={`w-full h-64 object-cover rounded-2xl transition ${
+                          shouldBlurPhotos ? "blur-sm" : ""
+                        }`}
+                      />
 
-                        {shouldBlurPhotos && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
-                            <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
-                              <p>Sichtbar ab</p>
-                              <p>
-                                {galleryRevealDateText} Uhr
-                              </p>
-                            </div>
+                      {shouldBlurPhotos && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+                          <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
+                            <p>Sichtbar ab</p>
+                            <p>
+                              {galleryRevealDateText} Uhr
+                            </p>
                           </div>
-                        )}
-                      </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full h-64 rounded-2xl bg-white/30 backdrop-blur-md border border-white/40 shadow-inner flex items-center justify-center overflow-hidden">
+                      <div className="w-16 h-16 rounded-full bg-white/40 blur-xl"></div>
+                    </div>
+                  )}
+                </button>
 
                       <button
                         onClick={() =>
