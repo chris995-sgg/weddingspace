@@ -41,7 +41,7 @@ type ImageLoadReport = {
 
 const CONCURRENT_LOADS = 15;
 
-const PRELOAD_ATTEMPTS = 20;
+const PRELOAD_ATTEMPTS = 30;
 const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
@@ -331,7 +331,7 @@ export default function GalleryPage() {
 
                     const next = [...prev, report.photoId];
 
-                    if (next.length >= Math.min(6, photos.length)) {
+                    if (next.length >= Math.min(8, photos.length)) {
                       setShowInitialLoader(false);
                     }
 
