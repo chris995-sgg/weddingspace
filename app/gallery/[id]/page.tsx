@@ -175,7 +175,7 @@ export default function GalleryPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-    }, 30000);
+    }, 300000);
 
     return () => clearInterval(interval);
   }, []);
