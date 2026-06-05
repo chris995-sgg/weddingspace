@@ -45,7 +45,7 @@ const PRELOAD_ATTEMPTS = 20;
 const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
-const FINAL_RETRY_CONCURRENT_LOADS = 6;
+const FINAL_RETRY_CONCURRENT_LOADS = 8;
 const FINAL_RETRY_ATTEMPTS = 20;
 const FINAL_RETRY_TIMEOUT_MS = 2000;
 const FINAL_RETRY_DELAY_MS = 200;
@@ -82,7 +82,7 @@ const [showInitialLoader, setShowInitialLoader] =
 
 const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
   useState(false);
-  
+
   const [imageLoadReports, setImageLoadReports] =
     useState<ImageLoadReport[]>([]);
 
