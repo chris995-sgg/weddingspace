@@ -21,26 +21,33 @@ type Photo = {
   guestName: string;
 };
 
+type ImageAttemptReport = {
+  label: string;
+  success: boolean;
+  durationMs: number;
+  reason: string;
+};
+
 type ImageLoadReport = {
   photoId: string;
   guestName: string;
+  url: string;
   success: boolean;
   attempts: number;
+  durationMs: number;
+  firstFailureReason: string;
+  attemptReports: ImageAttemptReport[];
 };
 
 const CONCURRENT_LOADS = 20;
 
-const PRELOAD_ATTEMPTS = 20;
+const PRELOAD_ATTEMPTS = 30;
 const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
-const FINAL_RETRY_CONCURRENT_LOADS = 4;
-const FINAL_RETRY_ATTEMPTS = 20;
-const FINAL_RETRY_TIMEOUT_MS = 800;
-const FINAL_RETRY_DELAY_MS = 200;
-
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
+
 
 export default function GalleryPage() {
   const params = useParams();
@@ -68,9 +75,6 @@ export default function GalleryPage() {
   const [showInitialLoader, setShowInitialLoader] =
     useState(true);
 
-  const [sortGalleryByUploadDate, setSortGalleryByUploadDate] =
-    useState(false);
-
   const [imageLoadReports, setImageLoadReports] =
     useState<ImageLoadReport[]>([]);
 
@@ -90,6 +94,10 @@ export default function GalleryPage() {
 
   const [now, setNow] = useState(new Date());
 
+  const selectedIndex = photos.findIndex(
+    (photo) => photo.id === selectedPhoto?.id
+  );
+
   const shouldBlurPhotos =
     galleryVisibilityMode === "date" &&
     galleryRevealAt !== null &&
@@ -104,26 +112,6 @@ export default function GalleryPage() {
         minute: "2-digit",
       })
     : "";
-
-  const loadingFinished = imageLoadReports.length > 0;
-
-  const loadedPhotosInLoadOrder = displayedPhotoIds
-    .map((photoId) =>
-      photos.find((photo) => photo.id === photoId)
-    )
-    .filter(Boolean) as Photo[];
-
-  const loadedPhotosByUploadDate = photos.filter((photo) =>
-    displayedPhotoIds.includes(photo.id)
-  );
-
-  const visiblePhotos = sortGalleryByUploadDate
-    ? loadedPhotosByUploadDate
-    : loadedPhotosInLoadOrder;
-
-  const selectedIndex = visiblePhotos.findIndex(
-    (photo) => photo.id === selectedPhoto?.id
-  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -160,7 +148,7 @@ export default function GalleryPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-    }, 300000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -190,14 +178,22 @@ export default function GalleryPage() {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     async function preloadImage(
-      photo: Photo,
-      maxAttempts = PRELOAD_ATTEMPTS,
-      timeoutMs = PRELOAD_TIMEOUT_MS,
-      retryDelayMs = PRELOAD_RETRY_DELAY_MS
+      photo: Photo
     ): Promise<ImageLoadReport> {
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const startTime = performance.now();
+      let firstFailureReason = "";
+      const attemptReports: ImageAttemptReport[] = [];
+
+      for (
+        let attempt = 1;
+        attempt <= PRELOAD_ATTEMPTS;
+        attempt++
+      ) {
+        const attemptStartTime = performance.now();
+
         const result = await new Promise<{
           success: boolean;
+          reason: string;
         }>((resolve) => {
           const img = new Image();
 
@@ -206,13 +202,15 @@ export default function GalleryPage() {
           const timeout = setTimeout(() => {
             resolve({
               success: false,
+              reason: `Timeout nach ${PRELOAD_TIMEOUT_MS} ms`,
             });
-          }, timeoutMs);
+          }, PRELOAD_TIMEOUT_MS);
 
           img.onload = () => {
             clearTimeout(timeout);
             resolve({
               success: true,
+              reason: "Bild geladen",
             });
           };
 
@@ -220,31 +218,59 @@ export default function GalleryPage() {
             clearTimeout(timeout);
             resolve({
               success: false,
+              reason: "Browser konnte Bild nicht laden",
             });
           };
 
           img.src = photo.imageUrl;
         });
 
+        const attemptDurationMs = Math.round(
+          performance.now() - attemptStartTime
+        );
+
+        attemptReports.push({
+          label: `Versuch ${attempt}`,
+          success: result.success,
+          durationMs: attemptDurationMs,
+          reason: result.reason,
+        });
+
         if (result.success) {
           return {
             photoId: photo.id,
             guestName: photo.guestName || "Gast",
+            url: photo.imageUrl,
             success: true,
             attempts: attempt,
+            durationMs: Math.round(
+              performance.now() - startTime
+            ),
+            firstFailureReason:
+              firstFailureReason || "Kein Fehlversuch",
+            attemptReports,
           };
         }
 
-        if (attempt < maxAttempts) {
-          await wait(retryDelayMs * attempt);
+        if (!firstFailureReason) {
+          firstFailureReason = `Versuch ${attempt}: ${result.reason}`;
+        }
+
+        if (attempt < PRELOAD_ATTEMPTS) {
+          await wait((PRELOAD_RETRY_DELAY_MS*attempt));
         }
       }
 
       return {
         photoId: photo.id,
         guestName: photo.guestName || "Gast",
+        url: photo.imageUrl,
         success: false,
-        attempts: maxAttempts,
+        attempts: PRELOAD_ATTEMPTS,
+        durationMs: Math.round(performance.now() - startTime),
+        firstFailureReason:
+          firstFailureReason || "Bild wurde aufgegeben",
+        attemptReports,
       };
     }
 
@@ -254,7 +280,6 @@ export default function GalleryPage() {
       setImageLoadReports([]);
       setShowLoadReport(false);
       setTotalImageLoadDurationMs(0);
-      setSortGalleryByUploadDate(false);
 
       if (photos.length === 0) {
         setShowInitialLoader(false);
@@ -265,7 +290,6 @@ export default function GalleryPage() {
 
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
-      const failedPhotos: Photo[] = [];
 
       let nextIndex = 0;
       let activeCount = 0;
@@ -283,7 +307,6 @@ export default function GalleryPage() {
             nextIndex < photos.length
           ) {
             const photo = photos[nextIndex];
-
             nextIndex++;
             activeCount++;
 
@@ -300,25 +323,24 @@ export default function GalleryPage() {
 
               setCompletedImageCount(completedCount);
 
-              if (report.success) {
-                setDisplayedPhotoIds((prev) => {
-                  if (prev.includes(report.photoId)) {
-                    return prev;
-                  }
+                if (report.success) {
+                  setDisplayedPhotoIds((prev) => {
+                    if (prev.includes(report.photoId)) {
+                      return prev;
+                    }
 
-                  const next = [...prev, report.photoId];
+                    const next = [...prev, report.photoId];
 
-                  if (next.length >= Math.min(10, photos.length)) {
-                    setShowInitialLoader(false);
-                  }
+                    if (next.length >= Math.min(8, photos.length)) {
+                      setShowInitialLoader(false);
+                    }
 
-                  return next;
-                });
-              } else {
-                failedPhotos.push(photo);
-              }
+                    return next;
+                  });
+                }
 
               if (completedCount >= photos.length) {
+                setShowInitialLoader(false);
                 resolve();
                 return;
               }
@@ -333,78 +355,11 @@ export default function GalleryPage() {
 
       if (cancelled) return;
 
-      if (failedPhotos.length > 0) {
-        let retryNextIndex = 0;
-        let retryActiveCount = 0;
-        let retryCompletedCount = 0;
-
-        await new Promise<void>((resolve) => {
-          function startNextRetry() {
-            if (cancelled) {
-              resolve();
-              return;
-            }
-
-            while (
-              retryActiveCount < FINAL_RETRY_CONCURRENT_LOADS &&
-              retryNextIndex < failedPhotos.length
-            ) {
-              const photo = failedPhotos[retryNextIndex];
-
-              retryNextIndex++;
-              retryActiveCount++;
-
-              preloadImage(
-                photo,
-                FINAL_RETRY_ATTEMPTS,
-                FINAL_RETRY_TIMEOUT_MS,
-                FINAL_RETRY_DELAY_MS
-              ).then((report) => {
-                if (cancelled) {
-                  resolve();
-                  return;
-                }
-
-                reports.push(report);
-
-                retryCompletedCount++;
-                retryActiveCount--;
-
-                if (report.success) {
-                  setDisplayedPhotoIds((prev) => {
-                    if (prev.includes(report.photoId)) {
-                      return prev;
-                    }
-
-                    return [...prev, report.photoId];
-                  });
-                }
-
-                if (
-                  retryCompletedCount >= failedPhotos.length &&
-                  retryActiveCount === 0
-                ) {
-                  resolve();
-                  return;
-                }
-
-                startNextRetry();
-              });
-            }
-          }
-
-          startNextRetry();
-        });
-      }
-
-      if (cancelled) return;
-
       setImageLoadReports(reports);
       setTotalImageLoadDurationMs(
         Math.round(performance.now() - totalStartTime)
       );
       setShowLoadReport(false);
-      setShowInitialLoader(false);
     }
 
     loadImagesWithLimit();
@@ -446,21 +401,20 @@ export default function GalleryPage() {
   }
 
   function showNextPhoto() {
-    if (selectedIndex === -1 || visiblePhotos.length === 0) return;
+    if (selectedIndex === -1) return;
 
-    const nextIndex = (selectedIndex + 1) % visiblePhotos.length;
+    const nextIndex = (selectedIndex + 1) % photos.length;
 
-    setSelectedPhoto(visiblePhotos[nextIndex]);
+    setSelectedPhoto(photos[nextIndex]);
   }
 
   function showPreviousPhoto() {
-    if (selectedIndex === -1 || visiblePhotos.length === 0) return;
+    if (selectedIndex === -1) return;
 
     const previousIndex =
-      (selectedIndex - 1 + visiblePhotos.length) %
-      visiblePhotos.length;
+      (selectedIndex - 1 + photos.length) % photos.length;
 
-    setSelectedPhoto(visiblePhotos[previousIndex]);
+    setSelectedPhoto(photos[previousIndex]);
   }
 
   function togglePhotoSelection(photoId: string) {
@@ -592,79 +546,68 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            {loadingFinished && displayedPhotoIds.length > 1 && (
-              <div className="mt-8 flex justify-center">
-                <button
-                  onClick={() =>
-                    setSortGalleryByUploadDate((prev) => !prev)
-                  }
-                  className="bg-white/60 text-[#3b3128] border border-[#d8cfc3] px-5 py-3 rounded-2xl font-bold hover:bg-white/80 transition shadow-lg"
-                >
-                  {sortGalleryByUploadDate
-                    ? "Nach Lade-Reihenfolge anzeigen"
-                    : "Nach Uploaddatum sortieren"}
-                </button>
-              </div>
-            )}
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-              {visiblePhotos.map((photo) => {
-                const isSelected =
-                  selectedPhotoIds.includes(photo.id);
+              {photos
+                .filter((photo) =>
+                  displayedPhotoIds.includes(photo.id)
+                )
+                .map((photo) => {
+                  const isSelected =
+                    selectedPhotoIds.includes(photo.id);
 
-                return (
-                  <div key={photo.id} className="relative">
-                    <button
-                      onClick={() => setSelectedPhoto(photo)}
-                      className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
-                    >
-                      <img
-                        src={photo.imageUrl}
-                        loading="eager"
-                        decoding="async"
-                        alt=""
-                        onError={(e) =>
-                          retryVisibleImage(
-                            e.currentTarget,
-                            photo.imageUrl
-                          )
-                        }
-                        className={`w-full h-64 object-cover rounded-2xl transition ${
-                          shouldBlurPhotos ? "blur-sm" : ""
-                        }`}
-                      />
+                  return (
+                    <div key={photo.id} className="relative">
+                      <button
+                        onClick={() => setSelectedPhoto(photo)}
+                        className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
+                      >
+                        <img
+                          src={photo.imageUrl}
+                          loading="eager"
+                          decoding="async"
+                          alt=""
+                          onError={(e) =>
+                            retryVisibleImage(
+                              e.currentTarget,
+                              photo.imageUrl
+                            )
+                          }
+                          className={`w-full h-64 object-cover rounded-2xl transition ${
+                            shouldBlurPhotos ? "blur-sm" : ""
+                          }`}
+                        />
 
-                      {shouldBlurPhotos && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
-                          <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
-                            <p>Sichtbar ab</p>
-                            <p>
-                              {galleryRevealDateText} Uhr
-                            </p>
+                        {shouldBlurPhotos && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl pointer-events-none">
+                            <div className="bg-white/85 text-[#3b3128] px-3 py-2 rounded-xl text-xs font-bold shadow text-center">
+                              <p>Sichtbar ab</p>
+                              <p>
+                                {galleryRevealDateText} Uhr
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </button>
+                        )}
+                      </button>
 
-                    <button
-                      onClick={() =>
-                        togglePhotoSelection(photo.id)
-                      }
-                      className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
-                        isSelected
-                          ? "bg-[#c8ad72] border-white"
-                          : "bg-white/80 border-white"
-                      }`}
-                    >
-                      {isSelected ? "✓" : ""}
-                    </button>
+                      <button
+                        onClick={() =>
+                          togglePhotoSelection(photo.id)
+                        }
+                        className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
+                          isSelected
+                            ? "bg-[#c8ad72] border-white"
+                            : "bg-white/80 border-white"
+                        }`}
+                      >
+                        {isSelected ? "✓" : ""}
+                      </button>
 
-                    <p className="mt-2 text-center text-sm text-[#6b5c4d]">
-                      {photo.guestName || "Gast"}
-                    </p>
-                  </div>
-                );
-              })}
+                      <p className="mt-2 text-center text-sm text-[#6b5c4d]">
+                        {photo.guestName || "Gast"}
+                      </p>
+                    </div>
+                  );
+                })}
             </div>
 
             <div className="mt-8 text-center">
@@ -698,17 +641,17 @@ export default function GalleryPage() {
       </div>
 
       {isLoggedIn && imageLoadReports.length > 0 && !showLoadReport && (
-        <button
-          onClick={() => setShowLoadReport(true)}
-          className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
-        >
-          Ladebericht
-        </button>
-      )}
+  <button
+    onClick={() => setShowLoadReport(true)}
+    className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
+  >
+    Ladebericht
+  </button>
+)}
 
       {showLoadReport && (
         <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white rounded-[2rem] p-6 shadow-2xl text-[#3b3128]">
+          <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-white rounded-[2rem] p-6 shadow-2xl text-[#3b3128]">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-bold">
@@ -716,7 +659,11 @@ export default function GalleryPage() {
                 </h2>
 
                 <p className="text-sm text-[#6b5c4d] mt-1">
-                  Gesamtdauer: {totalImageLoadDurationMs} ms
+                  Gesamtzeit: {totalImageLoadDurationMs} ms
+                </p>
+
+                <p className="text-sm text-[#6b5c4d]">
+                  Berichte: {imageLoadReports.length}
                 </p>
               </div>
 
@@ -728,33 +675,88 @@ export default function GalleryPage() {
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {imageLoadReports.map((report, index) => (
                 <div
                   key={`${report.photoId}-${index}`}
-                  className="bg-[#f7f1e8] border border-[#e0d4c3] rounded-2xl p-4 flex items-center justify-between gap-4"
+                  className="bg-[#f7f1e8] border border-[#e0d4c3] rounded-2xl p-4"
                 >
-                  <div>
-                    <p className="font-bold">
-                      {report.guestName}
-                    </p>
+                  <p className="font-bold">
+                    Bericht {index + 1} — {report.guestName}
+                  </p>
 
-                    <p
-                      className={`text-sm font-semibold ${
+                  <p className="text-sm mt-1">
+                    Status:{" "}
+                    <span
+                      className={
                         report.success
                           ? "text-green-700"
                           : "text-red-700"
-                      }`}
+                      }
                     >
                       {report.success
                         ? "geladen"
-                        : "nicht geladen"}
+                        : "aufgegeben"}
+                    </span>
+                  </p>
+
+                  <p className="text-sm">
+                    Ladezeit: {report.durationMs} ms
+                  </p>
+
+                  <p className="text-sm">
+                    Versuche: {report.attempts}
+                  </p>
+
+                  <p className="text-sm">
+                    Erster Fehlversuch:{" "}
+                    {report.firstFailureReason}
+                  </p>
+
+                  <div className="mt-3 bg-white/70 rounded-xl p-3 border border-[#e0d4c3]">
+                    <p className="text-sm font-bold mb-2">
+                      Einzelne Versuche:
                     </p>
+
+                    <div className="space-y-2">
+                      {report.attemptReports.map(
+                        (attempt, attemptIndex) => (
+                          <div
+                            key={attemptIndex}
+                            className="text-xs bg-white rounded-lg p-2 border border-[#eadfce]"
+                          >
+                            <p className="font-bold">
+                              {attempt.label}
+                            </p>
+
+                            <p>
+                              Status:{" "}
+                              <span
+                                className={
+                                  attempt.success
+                                    ? "text-green-700"
+                                    : "text-red-700"
+                                }
+                              >
+                                {attempt.success
+                                  ? "geladen"
+                                  : "fehlgeschlagen"}
+                              </span>
+                            </p>
+
+                            <p>
+                              Dauer: {attempt.durationMs} ms
+                            </p>
+
+                            <p>Grund: {attempt.reason}</p>
+                          </div>
+                        )
+                      )}
+                    </div>
                   </div>
 
-                  <p className="text-sm font-bold text-[#3b3128]">
-                    {report.attempts} Versuch
-                    {report.attempts === 1 ? "" : "e"}
+                  <p className="text-xs mt-2 break-all text-[#6b5c4d]">
+                    {report.url}
                   </p>
                 </div>
               ))}
