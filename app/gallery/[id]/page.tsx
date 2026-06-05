@@ -32,7 +32,7 @@ const CONCURRENT_LOADS = 20;
 
 const PRELOAD_ATTEMPTS = 20;
 const PRELOAD_TIMEOUT_MS = 800;
-const PRELOAD_RETRY_DELAY_MS = 50;
+const PRELOAD_RETRY_DELAY_MS = 100;
 
 const FINAL_RETRY_CONCURRENT_LOADS = 4;
 const FINAL_RETRY_ATTEMPTS = 20;
@@ -236,7 +236,7 @@ export default function GalleryPage() {
         }
 
         if (attempt < maxAttempts) {
-          await wait(retryDelayMs * attempt);
+          await wait(retryDelayMs);
         }
       }
 
