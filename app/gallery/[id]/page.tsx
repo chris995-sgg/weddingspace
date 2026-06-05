@@ -77,9 +77,12 @@ export default function GalleryPage() {
   const [downloading, setDownloading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const [showInitialLoader, setShowInitialLoader] =
-    useState(true);
+const [showInitialLoader, setShowInitialLoader] =
+  useState(true);
 
+const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
+  useState(false);
+  
   const [imageLoadReports, setImageLoadReports] =
     useState<ImageLoadReport[]>([]);
 
@@ -285,12 +288,14 @@ async function preloadImage(
       setShowLoadReport(false);
       setTotalImageLoadDurationMs(0);
 
-      if (photos.length === 0) {
-        setShowInitialLoader(false);
-        return;
-      }
+    if (photos.length === 0) {
+  setShowInitialLoader(false);
+  setShowSmallLoadingLogo(false);
+  return;
+}
 
       setShowInitialLoader(true);
+      setShowSmallLoadingLogo(true);
 
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
@@ -434,9 +439,9 @@ async function preloadImage(
           setTotalImageLoadDurationMs(
             Math.round(performance.now() - totalStartTime)
           );
-          setShowLoadReport(false);
-          setShowInitialLoader(false);
-
+       setShowLoadReport(false);
+setShowInitialLoader(false);
+setShowSmallLoadingLogo(false);
     }
 
     loadImagesWithLimit();
@@ -561,6 +566,14 @@ async function preloadImage(
           </p>
         </div>
       )}
+
+      {!showInitialLoader && showSmallLoadingLogo && (
+  <div className="fixed left-1/2 top-1/2 z-[9996] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+    <div className="bg-white/70 backdrop-blur-md rounded-full p-4 shadow-2xl border border-white/50">
+      <div className="h-9 w-9 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin"></div>
+    </div>
+  </div>
+)}
 
       <div className="max-w-7xl mx-auto">
         {isLoggedIn && (
