@@ -41,7 +41,7 @@ type ImageLoadReport = {
 
 const CONCURRENT_LOADS = 20;
 
-const PRELOAD_ATTEMPTS = 10;
+const PRELOAD_ATTEMPTS = 20;
 const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
