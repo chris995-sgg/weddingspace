@@ -336,7 +336,7 @@ async function preloadImage(
 
           const next = [...prev, report.photoId];
 
-          if (next.length >= Math.min(8, photos.length)) {
+          if (next.length >= Math.min(10, photos.length)) {
             setShowInitialLoader(false);
           }
 
