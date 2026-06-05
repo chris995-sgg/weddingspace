@@ -53,7 +53,6 @@ const FINAL_RETRY_DELAY_MS = 200;
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
 
-
 export default function GalleryPage() {
   const params = useParams();
 
@@ -77,11 +76,14 @@ export default function GalleryPage() {
   const [downloading, setDownloading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-const [showInitialLoader, setShowInitialLoader] =
-  useState(true);
+  const [showInitialLoader, setShowInitialLoader] =
+    useState(true);
 
-const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
-  useState(false);
+  const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
+    useState(false);
+
+  const [sortGalleryByUploadDate, setSortGalleryByUploadDate] =
+    useState(false);
 
   const [imageLoadReports, setImageLoadReports] =
     useState<ImageLoadReport[]>([]);
@@ -102,10 +104,6 @@ const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
 
   const [now, setNow] = useState(new Date());
 
-  const selectedIndex = photos.findIndex(
-    (photo) => photo.id === selectedPhoto?.id
-  );
-
   const shouldBlurPhotos =
     galleryVisibilityMode === "date" &&
     galleryRevealAt !== null &&
@@ -120,6 +118,27 @@ const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
         minute: "2-digit",
       })
     : "";
+
+  const loadingFinished =
+    imageLoadReports.length > 0 && !showSmallLoadingLogo;
+
+  const loadedPhotosInLoadOrder = displayedPhotoIds
+    .map((photoId) =>
+      photos.find((photo) => photo.id === photoId)
+    )
+    .filter(Boolean) as Photo[];
+
+  const loadedPhotosByUploadDate = photos.filter((photo) =>
+    displayedPhotoIds.includes(photo.id)
+  );
+
+  const visiblePhotos = sortGalleryByUploadDate
+    ? loadedPhotosByUploadDate
+    : loadedPhotosInLoadOrder;
+
+  const selectedIndex = visiblePhotos.findIndex(
+    (photo) => photo.id === selectedPhoto?.id
+  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -185,101 +204,100 @@ const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
     const wait = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
-async function preloadImage(
-  photo: Photo,
-  maxAttempts = PRELOAD_ATTEMPTS,
-  timeoutMs = PRELOAD_TIMEOUT_MS,
-  retryDelayMs = PRELOAD_RETRY_DELAY_MS,
-  labelPrefix = "Versuch"
-): Promise<ImageLoadReport> {
-  const startTime = performance.now();
-  let firstFailureReason = "";
-  const attemptReports: ImageAttemptReport[] = [];
+    async function preloadImage(
+      photo: Photo,
+      maxAttempts = PRELOAD_ATTEMPTS,
+      timeoutMs = PRELOAD_TIMEOUT_MS,
+      retryDelayMs = PRELOAD_RETRY_DELAY_MS,
+      labelPrefix = "Versuch"
+    ): Promise<ImageLoadReport> {
+      const startTime = performance.now();
+      let firstFailureReason = "";
+      const attemptReports: ImageAttemptReport[] = [];
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const attemptStartTime = performance.now();
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const attemptStartTime = performance.now();
 
-    const result = await new Promise<{
-      success: boolean;
-      reason: string;
-    }>((resolve) => {
-      const img = new Image();
+        const result = await new Promise<{
+          success: boolean;
+          reason: string;
+        }>((resolve) => {
+          const img = new Image();
 
-      img.decoding = "async";
+          img.decoding = "async";
 
-      const timeout = setTimeout(() => {
-        resolve({
-          success: false,
-          reason: `Timeout nach ${timeoutMs} ms`,
+          const timeout = setTimeout(() => {
+            resolve({
+              success: false,
+              reason: `Timeout nach ${timeoutMs} ms`,
+            });
+          }, timeoutMs);
+
+          img.onload = () => {
+            clearTimeout(timeout);
+            resolve({
+              success: true,
+              reason: "Bild geladen",
+            });
+          };
+
+          img.onerror = () => {
+            clearTimeout(timeout);
+            resolve({
+              success: false,
+              reason: "Browser konnte Bild nicht laden",
+            });
+          };
+
+          img.src = photo.imageUrl;
         });
-      }, timeoutMs);
 
-      img.onload = () => {
-        clearTimeout(timeout);
-        resolve({
-          success: true,
-          reason: "Bild geladen",
+        const attemptDurationMs = Math.round(
+          performance.now() - attemptStartTime
+        );
+
+        attemptReports.push({
+          label: `${labelPrefix} ${attempt}`,
+          success: result.success,
+          durationMs: attemptDurationMs,
+          reason: result.reason,
         });
-      };
 
-      img.onerror = () => {
-        clearTimeout(timeout);
-        resolve({
-          success: false,
-          reason: "Browser konnte Bild nicht laden",
-        });
-      };
+        if (result.success) {
+          return {
+            photoId: photo.id,
+            guestName: photo.guestName || "Gast",
+            url: photo.imageUrl,
+            success: true,
+            attempts: attempt,
+            durationMs: Math.round(performance.now() - startTime),
+            firstFailureReason:
+              firstFailureReason || "Kein Fehlversuch",
+            attemptReports,
+          };
+        }
 
-      img.src = photo.imageUrl;
-    });
+        if (!firstFailureReason) {
+          firstFailureReason = `${labelPrefix} ${attempt}: ${result.reason}`;
+        }
 
-    const attemptDurationMs = Math.round(
-      performance.now() - attemptStartTime
-    );
+        if (attempt < maxAttempts) {
+          await wait(retryDelayMs * attempt);
+        }
+      }
 
-    attemptReports.push({
-      label: `${labelPrefix} ${attempt}`,
-      success: result.success,
-      durationMs: attemptDurationMs,
-      reason: result.reason,
-    });
-
-    if (result.success) {
       return {
         photoId: photo.id,
         guestName: photo.guestName || "Gast",
         url: photo.imageUrl,
-        success: true,
-        attempts: attempt,
+        success: false,
+        attempts: maxAttempts,
         durationMs: Math.round(performance.now() - startTime),
         firstFailureReason:
-          firstFailureReason || "Kein Fehlversuch",
+          firstFailureReason || "Bild wurde aufgegeben",
         attemptReports,
       };
     }
-
-    if (!firstFailureReason) {
-      firstFailureReason = `${labelPrefix} ${attempt}: ${result.reason}`;
-    }
-
-    if (attempt < maxAttempts) {
-      await wait(retryDelayMs * attempt);
-    }
-  }
-
-  return {
-    photoId: photo.id,
-    guestName: photo.guestName || "Gast",
-    url: photo.imageUrl,
-    success: false,
-    attempts: maxAttempts,
-    durationMs: Math.round(performance.now() - startTime),
-    firstFailureReason:
-      firstFailureReason || "Bild wurde aufgegeben",
-    attemptReports,
-  };
-}
-
 
     async function loadImagesWithLimit() {
       setDisplayedPhotoIds([]);
@@ -287,12 +305,13 @@ async function preloadImage(
       setImageLoadReports([]);
       setShowLoadReport(false);
       setTotalImageLoadDurationMs(0);
+      setSortGalleryByUploadDate(false);
 
-    if (photos.length === 0) {
-  setShowInitialLoader(false);
-  setShowSmallLoadingLogo(false);
-  return;
-}
+      if (photos.length === 0) {
+        setShowInitialLoader(false);
+        setShowSmallLoadingLogo(false);
+        return;
+      }
 
       setShowInitialLoader(true);
       setShowSmallLoadingLogo(true);
@@ -333,26 +352,25 @@ async function preloadImage(
 
               setCompletedImageCount(completedCount);
 
-                if (report.success) {
-        setDisplayedPhotoIds((prev) => {
-          if (prev.includes(report.photoId)) {
-            return prev;
-          }
+              if (report.success) {
+                setDisplayedPhotoIds((prev) => {
+                  if (prev.includes(report.photoId)) {
+                    return prev;
+                  }
 
-          const next = [...prev, report.photoId];
+                  const next = [...prev, report.photoId];
 
-          if (next.length >= Math.min(10, photos.length)) {
-            setShowInitialLoader(false);
-          }
+                  if (next.length >= Math.min(10, photos.length)) {
+                    setShowInitialLoader(false);
+                  }
 
-          return next;
-        });
-      } else {
-        failedPhotos.push(photo);
-      }
+                  return next;
+                });
+              } else {
+                failedPhotos.push(photo);
+              }
 
               if (completedCount >= photos.length) {
-               
                 resolve();
                 return;
               }
@@ -365,83 +383,82 @@ async function preloadImage(
         startNext();
       });
 
-     
-          if (cancelled) return;
+      if (cancelled) return;
 
-          if (failedPhotos.length > 0) {
-            let retryNextIndex = 0;
-            let retryActiveCount = 0;
-            let retryCompletedCount = 0;
+      if (failedPhotos.length > 0) {
+        let retryNextIndex = 0;
+        let retryActiveCount = 0;
+        let retryCompletedCount = 0;
 
-            await new Promise<void>((resolve) => {
-              function startNextRetry() {
+        await new Promise<void>((resolve) => {
+          function startNextRetry() {
+            if (cancelled) {
+              resolve();
+              return;
+            }
+
+            while (
+              retryActiveCount < FINAL_RETRY_CONCURRENT_LOADS &&
+              retryNextIndex < failedPhotos.length
+            ) {
+              const photo = failedPhotos[retryNextIndex];
+
+              retryNextIndex++;
+              retryActiveCount++;
+
+              preloadImage(
+                photo,
+                FINAL_RETRY_ATTEMPTS,
+                FINAL_RETRY_TIMEOUT_MS,
+                FINAL_RETRY_DELAY_MS,
+                "Finaler Nachversuch"
+              ).then((report) => {
                 if (cancelled) {
                   resolve();
                   return;
                 }
 
-                while (
-                  retryActiveCount < FINAL_RETRY_CONCURRENT_LOADS &&
-                  retryNextIndex < failedPhotos.length
-                ) {
-                  const photo = failedPhotos[retryNextIndex];
+                reports.push(report);
 
-                  retryNextIndex++;
-                  retryActiveCount++;
+                retryCompletedCount++;
+                retryActiveCount--;
 
-                  preloadImage(
-                    photo,
-                    FINAL_RETRY_ATTEMPTS,
-                    FINAL_RETRY_TIMEOUT_MS,
-                    FINAL_RETRY_DELAY_MS,
-                    "Finaler Nachversuch"
-                  ).then((report) => {
-                    if (cancelled) {
-                      resolve();
-                      return;
+                if (report.success) {
+                  setDisplayedPhotoIds((prev) => {
+                    if (prev.includes(report.photoId)) {
+                      return prev;
                     }
 
-                    reports.push(report);
-
-                    retryCompletedCount++;
-                    retryActiveCount--;
-
-                    if (report.success) {
-                      setDisplayedPhotoIds((prev) => {
-                        if (prev.includes(report.photoId)) {
-                          return prev;
-                        }
-
-                        return [...prev, report.photoId];
-                      });
-                    }
-
-                    if (
-                      retryCompletedCount >= failedPhotos.length &&
-                      retryActiveCount === 0
-                    ) {
-                      resolve();
-                      return;
-                    }
-
-                    startNextRetry();
+                    return [...prev, report.photoId];
                   });
                 }
-              }
 
-              startNextRetry();
-            });
+                if (
+                  retryCompletedCount >= failedPhotos.length &&
+                  retryActiveCount === 0
+                ) {
+                  resolve();
+                  return;
+                }
+
+                startNextRetry();
+              });
+            }
           }
 
-          if (cancelled) return;
+          startNextRetry();
+        });
+      }
 
-          setImageLoadReports(reports);
-          setTotalImageLoadDurationMs(
-            Math.round(performance.now() - totalStartTime)
-          );
-       setShowLoadReport(false);
-setShowInitialLoader(false);
-setShowSmallLoadingLogo(false);
+      if (cancelled) return;
+
+      setImageLoadReports(reports);
+      setTotalImageLoadDurationMs(
+        Math.round(performance.now() - totalStartTime)
+      );
+      setShowLoadReport(false);
+      setShowInitialLoader(false);
+      setShowSmallLoadingLogo(false);
     }
 
     loadImagesWithLimit();
@@ -483,20 +500,21 @@ setShowSmallLoadingLogo(false);
   }
 
   function showNextPhoto() {
-    if (selectedIndex === -1) return;
+    if (selectedIndex === -1 || visiblePhotos.length === 0) return;
 
-    const nextIndex = (selectedIndex + 1) % photos.length;
+    const nextIndex = (selectedIndex + 1) % visiblePhotos.length;
 
-    setSelectedPhoto(photos[nextIndex]);
+    setSelectedPhoto(visiblePhotos[nextIndex]);
   }
 
   function showPreviousPhoto() {
-    if (selectedIndex === -1) return;
+    if (selectedIndex === -1 || visiblePhotos.length === 0) return;
 
     const previousIndex =
-      (selectedIndex - 1 + photos.length) % photos.length;
+      (selectedIndex - 1 + visiblePhotos.length) %
+      visiblePhotos.length;
 
-    setSelectedPhoto(photos[previousIndex]);
+    setSelectedPhoto(visiblePhotos[previousIndex]);
   }
 
   function togglePhotoSelection(photoId: string) {
@@ -568,12 +586,12 @@ setShowSmallLoadingLogo(false);
       )}
 
       {!showInitialLoader && showSmallLoadingLogo && (
-  <div className="fixed left-1/2 top-1/2 z-[9996] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-    <div className="bg-white/70 backdrop-blur-md rounded-full p-4 shadow-2xl border border-white/50">
-      <div className="h-9 w-9 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin"></div>
-    </div>
-  </div>
-)}
+        <div className="fixed top-6 right-6 z-[9996] pointer-events-none">
+          <div className="bg-white/70 backdrop-blur-md rounded-full p-3 shadow-2xl border border-white/50">
+            <div className="h-7 w-7 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin"></div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto">
         {isLoggedIn && (
@@ -636,27 +654,32 @@ setShowSmallLoadingLogo(false);
           </div>
         ) : (
           <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-                {photos.map((photo) => {
-                  const isSelected =
-                    selectedPhotoIds.includes(photo.id);
-
-                  const isLoaded =
-                    displayedPhotoIds.includes(photo.id);
-
-                  return (
-                    <div key={photo.id} className="relative">
+            {loadingFinished && displayedPhotoIds.length > 1 && (
+              <div className="mt-8 flex justify-center">
                 <button
-                  onClick={() => {
-                    if (isLoaded) {
-                      setSelectedPhoto(photo);
-                    }
-                  }}
-                  disabled={!isLoaded}
-                  className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden disabled:cursor-default"
+                  onClick={() =>
+                    setSortGalleryByUploadDate((prev) => !prev)
+                  }
+                  className="bg-white/60 text-[#3b3128] border border-[#d8cfc3] px-5 py-3 rounded-2xl font-bold hover:bg-white/80 transition shadow-lg"
                 >
-                  {isLoaded ? (
-                    <>
+                  {sortGalleryByUploadDate
+                    ? "Nach Lade-Reihenfolge anzeigen"
+                    : "Nach Uploaddatum sortieren"}
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
+              {visiblePhotos.map((photo) => {
+                const isSelected =
+                  selectedPhotoIds.includes(photo.id);
+
+                return (
+                  <div key={photo.id} className="relative">
+                    <button
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="w-full rounded-[1.5rem] bg-black/30 overflow-hidden"
+                    >
                       <img
                         src={photo.imageUrl}
                         loading="eager"
@@ -683,33 +706,27 @@ setShowSmallLoadingLogo(false);
                           </div>
                         </div>
                       )}
-                    </>
-                  ) : (
-                    <div className="w-full h-64 rounded-2xl bg-white/30 backdrop-blur-md border border-white/40 shadow-inner flex items-center justify-center overflow-hidden">
-                      <div className="w-16 h-16 rounded-full bg-white/40 blur-xl"></div>
-                    </div>
-                  )}
-                </button>
+                    </button>
 
-                      <button
-                        onClick={() =>
-                          togglePhotoSelection(photo.id)
-                        }
-                        className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
-                          isSelected
-                            ? "bg-[#c8ad72] border-white"
-                            : "bg-white/80 border-white"
-                        }`}
-                      >
-                        {isSelected ? "✓" : ""}
-                      </button>
+                    <button
+                      onClick={() =>
+                        togglePhotoSelection(photo.id)
+                      }
+                      className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
+                        isSelected
+                          ? "bg-[#c8ad72] border-white"
+                          : "bg-white/80 border-white"
+                      }`}
+                    >
+                      {isSelected ? "✓" : ""}
+                    </button>
 
-                      <p className="mt-2 text-center text-sm text-[#6b5c4d]">
-                        {photo.guestName || "Gast"}
-                      </p>
-                    </div>
-                  );
-                })}
+                    <p className="mt-2 text-center text-sm text-[#6b5c4d]">
+                      {photo.guestName || "Gast"}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="mt-8 text-center">
@@ -743,13 +760,13 @@ setShowSmallLoadingLogo(false);
       </div>
 
       {isLoggedIn && imageLoadReports.length > 0 && !showLoadReport && (
-  <button
-    onClick={() => setShowLoadReport(true)}
-    className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
-  >
-    Ladebericht
-  </button>
-)}
+        <button
+          onClick={() => setShowLoadReport(true)}
+          className="fixed bottom-6 right-6 z-[9997] bg-[#3b3128] text-white px-4 py-3 rounded-2xl font-bold shadow-2xl border border-white/40 hover:bg-[#4a4036] transition"
+        >
+          Ladebericht
+        </button>
+      )}
 
       {showLoadReport && (
         <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
