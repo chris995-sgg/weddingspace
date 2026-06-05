@@ -29,19 +29,15 @@ type ImageLoadReport = {
 };
 
 const CONCURRENT_LOADS = 20;
-const PRELOAD_ATTEMPTS = 15;
+
+const PRELOAD_ATTEMPTS = 20;
 const PRELOAD_TIMEOUT_MS = 800;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
-const FINAL_RETRY_CONCURRENT_LOADS = 20;
-const FINAL_RETRY_ATTEMPTS = 15;
+const FINAL_RETRY_CONCURRENT_LOADS = 4;
+const FINAL_RETRY_ATTEMPTS = 20;
 const FINAL_RETRY_TIMEOUT_MS = 800;
 const FINAL_RETRY_DELAY_MS = 200;
-
-const LAST_RETRY_CONCURRENT_LOADS = 4;
-const LAST_RETRY_ATTEMPTS = 20;
-const LAST_RETRY_TIMEOUT_MS = 800;
-const LAST_RETRY_DELAY_MS = 300;
 
 const VISIBLE_IMG_RETRIES = 5;
 const VISIBLE_IMG_RETRY_DELAY_MS = 50;
@@ -252,233 +248,164 @@ export default function GalleryPage() {
       };
     }
 
-   async function loadImagesWithLimit() {
-  setDisplayedPhotoIds([]);
-  setCompletedImageCount(0);
-  setImageLoadReports([]);
-  setShowLoadReport(false);
-  setTotalImageLoadDurationMs(0);
-  setSortGalleryByUploadDate(false);
+    async function loadImagesWithLimit() {
+      setDisplayedPhotoIds([]);
+      setCompletedImageCount(0);
+      setImageLoadReports([]);
+      setShowLoadReport(false);
+      setTotalImageLoadDurationMs(0);
+      setSortGalleryByUploadDate(false);
 
-  if (photos.length === 0) {
-    setShowInitialLoader(false);
-    return;
-  }
-
-  setShowInitialLoader(true);
-
-  const totalStartTime = performance.now();
-  const reports: ImageLoadReport[] = [];
-  const failedPhotos: Photo[] = [];
-  const lastRetryPhotos: Photo[] = [];
-
-  let nextIndex = 0;
-  let activeCount = 0;
-  let completedCount = 0;
-
-  await new Promise<void>((resolve) => {
-    function startNext() {
-      if (cancelled) {
-        resolve();
+      if (photos.length === 0) {
+        setShowInitialLoader(false);
         return;
       }
 
-      while (
-        activeCount < CONCURRENT_LOADS &&
-        nextIndex < photos.length
-      ) {
-        const photo = photos[nextIndex];
+      setShowInitialLoader(true);
 
-        nextIndex++;
-        activeCount++;
+      const totalStartTime = performance.now();
+      const reports: ImageLoadReport[] = [];
+      const failedPhotos: Photo[] = [];
 
-        preloadImage(photo).then((report) => {
+      let nextIndex = 0;
+      let activeCount = 0;
+      let completedCount = 0;
+
+      await new Promise<void>((resolve) => {
+        function startNext() {
           if (cancelled) {
             resolve();
             return;
           }
 
-          reports.push(report);
+          while (
+            activeCount < CONCURRENT_LOADS &&
+            nextIndex < photos.length
+          ) {
+            const photo = photos[nextIndex];
 
-          completedCount++;
-          activeCount--;
+            nextIndex++;
+            activeCount++;
 
-          setCompletedImageCount(completedCount);
-
-          if (report.success) {
-            setDisplayedPhotoIds((prev) => {
-              if (prev.includes(report.photoId)) {
-                return prev;
+            preloadImage(photo).then((report) => {
+              if (cancelled) {
+                resolve();
+                return;
               }
 
-              const next = [...prev, report.photoId];
+              reports.push(report);
 
-              if (next.length >= Math.min(10, photos.length)) {
-                setShowInitialLoader(false);
+              completedCount++;
+              activeCount--;
+
+              setCompletedImageCount(completedCount);
+
+              if (report.success) {
+                setDisplayedPhotoIds((prev) => {
+                  if (prev.includes(report.photoId)) {
+                    return prev;
+                  }
+
+                  const next = [...prev, report.photoId];
+
+                  if (next.length >= Math.min(10, photos.length)) {
+                    setShowInitialLoader(false);
+                  }
+
+                  return next;
+                });
+              } else {
+                failedPhotos.push(photo);
               }
 
-              return next;
+              if (completedCount >= photos.length) {
+                resolve();
+                return;
+              }
+
+              startNext();
             });
-          } else {
-            failedPhotos.push(photo);
+          }
+        }
+
+        startNext();
+      });
+
+      if (cancelled) return;
+
+      if (failedPhotos.length > 0) {
+        let retryNextIndex = 0;
+        let retryActiveCount = 0;
+        let retryCompletedCount = 0;
+
+        await new Promise<void>((resolve) => {
+          function startNextRetry() {
+            if (cancelled) {
+              resolve();
+              return;
+            }
+
+            while (
+              retryActiveCount < FINAL_RETRY_CONCURRENT_LOADS &&
+              retryNextIndex < failedPhotos.length
+            ) {
+              const photo = failedPhotos[retryNextIndex];
+
+              retryNextIndex++;
+              retryActiveCount++;
+
+              preloadImage(
+                photo,
+                FINAL_RETRY_ATTEMPTS,
+                FINAL_RETRY_TIMEOUT_MS,
+                FINAL_RETRY_DELAY_MS
+              ).then((report) => {
+                if (cancelled) {
+                  resolve();
+                  return;
+                }
+
+                reports.push(report);
+
+                retryCompletedCount++;
+                retryActiveCount--;
+
+                if (report.success) {
+                  setDisplayedPhotoIds((prev) => {
+                    if (prev.includes(report.photoId)) {
+                      return prev;
+                    }
+
+                    return [...prev, report.photoId];
+                  });
+                }
+
+                if (
+                  retryCompletedCount >= failedPhotos.length &&
+                  retryActiveCount === 0
+                ) {
+                  resolve();
+                  return;
+                }
+
+                startNextRetry();
+              });
+            }
           }
 
-          if (completedCount >= photos.length) {
-            resolve();
-            return;
-          }
-
-          startNext();
+          startNextRetry();
         });
       }
+
+      if (cancelled) return;
+
+      setImageLoadReports(reports);
+      setTotalImageLoadDurationMs(
+        Math.round(performance.now() - totalStartTime)
+      );
+      setShowLoadReport(false);
+      setShowInitialLoader(false);
     }
-
-    startNext();
-  });
-
-  if (cancelled) return;
-
-  if (failedPhotos.length > 0) {
-    let retryNextIndex = 0;
-    let retryActiveCount = 0;
-    let retryCompletedCount = 0;
-
-    await new Promise<void>((resolve) => {
-      function startNextRetry() {
-        if (cancelled) {
-          resolve();
-          return;
-        }
-
-        while (
-          retryActiveCount < FINAL_RETRY_CONCURRENT_LOADS &&
-          retryNextIndex < failedPhotos.length
-        ) {
-          const photo = failedPhotos[retryNextIndex];
-
-          retryNextIndex++;
-          retryActiveCount++;
-
-          preloadImage(
-            photo,
-            FINAL_RETRY_ATTEMPTS,
-            FINAL_RETRY_TIMEOUT_MS,
-            FINAL_RETRY_DELAY_MS
-          ).then((report) => {
-            if (cancelled) {
-              resolve();
-              return;
-            }
-
-            reports.push(report);
-
-            retryCompletedCount++;
-            retryActiveCount--;
-
-            if (report.success) {
-              setDisplayedPhotoIds((prev) => {
-                if (prev.includes(report.photoId)) {
-                  return prev;
-                }
-
-                return [...prev, report.photoId];
-              });
-            } else {
-              lastRetryPhotos.push(photo);
-            }
-
-            if (
-              retryCompletedCount >= failedPhotos.length &&
-              retryActiveCount === 0
-            ) {
-              resolve();
-              return;
-            }
-
-            startNextRetry();
-          });
-        }
-      }
-
-      startNextRetry();
-    });
-  }
-
-  if (cancelled) return;
-
-  if (lastRetryPhotos.length > 0) {
-    let lastRetryNextIndex = 0;
-    let lastRetryActiveCount = 0;
-    let lastRetryCompletedCount = 0;
-
-    await new Promise<void>((resolve) => {
-      function startLastRetry() {
-        if (cancelled) {
-          resolve();
-          return;
-        }
-
-        while (
-          lastRetryActiveCount < LAST_RETRY_CONCURRENT_LOADS &&
-          lastRetryNextIndex < lastRetryPhotos.length
-        ) {
-          const photo = lastRetryPhotos[lastRetryNextIndex];
-
-          lastRetryNextIndex++;
-          lastRetryActiveCount++;
-
-          preloadImage(
-            photo,
-            LAST_RETRY_ATTEMPTS,
-            LAST_RETRY_TIMEOUT_MS,
-            LAST_RETRY_DELAY_MS
-          ).then((report) => {
-            if (cancelled) {
-              resolve();
-              return;
-            }
-
-            reports.push(report);
-
-            lastRetryCompletedCount++;
-            lastRetryActiveCount--;
-
-            if (report.success) {
-              setDisplayedPhotoIds((prev) => {
-                if (prev.includes(report.photoId)) {
-                  return prev;
-                }
-
-                return [...prev, report.photoId];
-              });
-            }
-
-            if (
-              lastRetryCompletedCount >= lastRetryPhotos.length &&
-              lastRetryActiveCount === 0
-            ) {
-              resolve();
-              return;
-            }
-
-            startLastRetry();
-          });
-        }
-      }
-
-      startLastRetry();
-    });
-  }
-
-  if (cancelled) return;
-
-  setImageLoadReports(reports);
-  setTotalImageLoadDurationMs(
-    Math.round(performance.now() - totalStartTime)
-  );
-  setShowLoadReport(false);
-  setShowInitialLoader(false);
-}
 
     loadImagesWithLimit();
 
