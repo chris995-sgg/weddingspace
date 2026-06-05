@@ -21,22 +21,11 @@ type Photo = {
   guestName: string;
 };
 
-type ImageAttemptReport = {
-  label: string;
-  success: boolean;
-  durationMs: number;
-  reason: string;
-};
-
 type ImageLoadReport = {
   photoId: string;
   guestName: string;
-  url: string;
   success: boolean;
   attempts: number;
-  durationMs: number;
-  firstFailureReason: string;
-  attemptReports: ImageAttemptReport[];
 };
 
 const CONCURRENT_LOADS = 20;
@@ -79,9 +68,6 @@ export default function GalleryPage() {
   const [showInitialLoader, setShowInitialLoader] =
     useState(true);
 
-  const [showSmallLoadingLogo, setShowSmallLoadingLogo] =
-    useState(false);
-
   const [sortGalleryByUploadDate, setSortGalleryByUploadDate] =
     useState(false);
 
@@ -119,8 +105,7 @@ export default function GalleryPage() {
       })
     : "";
 
-  const loadingFinished =
-    imageLoadReports.length > 0 && !showSmallLoadingLogo;
+  const loadingFinished = imageLoadReports.length > 0;
 
   const loadedPhotosInLoadOrder = displayedPhotoIds
     .map((photoId) =>
@@ -208,19 +193,11 @@ export default function GalleryPage() {
       photo: Photo,
       maxAttempts = PRELOAD_ATTEMPTS,
       timeoutMs = PRELOAD_TIMEOUT_MS,
-      retryDelayMs = PRELOAD_RETRY_DELAY_MS,
-      labelPrefix = "Versuch"
+      retryDelayMs = PRELOAD_RETRY_DELAY_MS
     ): Promise<ImageLoadReport> {
-      const startTime = performance.now();
-      let firstFailureReason = "";
-      const attemptReports: ImageAttemptReport[] = [];
-
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        const attemptStartTime = performance.now();
-
         const result = await new Promise<{
           success: boolean;
-          reason: string;
         }>((resolve) => {
           const img = new Image();
 
@@ -229,7 +206,6 @@ export default function GalleryPage() {
           const timeout = setTimeout(() => {
             resolve({
               success: false,
-              reason: `Timeout nach ${timeoutMs} ms`,
             });
           }, timeoutMs);
 
@@ -237,7 +213,6 @@ export default function GalleryPage() {
             clearTimeout(timeout);
             resolve({
               success: true,
-              reason: "Bild geladen",
             });
           };
 
@@ -245,40 +220,19 @@ export default function GalleryPage() {
             clearTimeout(timeout);
             resolve({
               success: false,
-              reason: "Browser konnte Bild nicht laden",
             });
           };
 
           img.src = photo.imageUrl;
         });
 
-        const attemptDurationMs = Math.round(
-          performance.now() - attemptStartTime
-        );
-
-        attemptReports.push({
-          label: `${labelPrefix} ${attempt}`,
-          success: result.success,
-          durationMs: attemptDurationMs,
-          reason: result.reason,
-        });
-
         if (result.success) {
           return {
             photoId: photo.id,
             guestName: photo.guestName || "Gast",
-            url: photo.imageUrl,
             success: true,
             attempts: attempt,
-            durationMs: Math.round(performance.now() - startTime),
-            firstFailureReason:
-              firstFailureReason || "Kein Fehlversuch",
-            attemptReports,
           };
-        }
-
-        if (!firstFailureReason) {
-          firstFailureReason = `${labelPrefix} ${attempt}: ${result.reason}`;
         }
 
         if (attempt < maxAttempts) {
@@ -289,13 +243,8 @@ export default function GalleryPage() {
       return {
         photoId: photo.id,
         guestName: photo.guestName || "Gast",
-        url: photo.imageUrl,
         success: false,
         attempts: maxAttempts,
-        durationMs: Math.round(performance.now() - startTime),
-        firstFailureReason:
-          firstFailureReason || "Bild wurde aufgegeben",
-        attemptReports,
       };
     }
 
@@ -309,12 +258,10 @@ export default function GalleryPage() {
 
       if (photos.length === 0) {
         setShowInitialLoader(false);
-        setShowSmallLoadingLogo(false);
         return;
       }
 
       setShowInitialLoader(true);
-      setShowSmallLoadingLogo(true);
 
       const totalStartTime = performance.now();
       const reports: ImageLoadReport[] = [];
@@ -336,6 +283,7 @@ export default function GalleryPage() {
             nextIndex < photos.length
           ) {
             const photo = photos[nextIndex];
+
             nextIndex++;
             activeCount++;
 
@@ -410,8 +358,7 @@ export default function GalleryPage() {
                 photo,
                 FINAL_RETRY_ATTEMPTS,
                 FINAL_RETRY_TIMEOUT_MS,
-                FINAL_RETRY_DELAY_MS,
-                "Finaler Nachversuch"
+                FINAL_RETRY_DELAY_MS
               ).then((report) => {
                 if (cancelled) {
                   resolve();
@@ -458,7 +405,6 @@ export default function GalleryPage() {
       );
       setShowLoadReport(false);
       setShowInitialLoader(false);
-      setShowSmallLoadingLogo(false);
     }
 
     loadImagesWithLimit();
@@ -582,14 +528,6 @@ export default function GalleryPage() {
           <p className="text-lg font-bold">
             Galerie wird geladen...
           </p>
-        </div>
-      )}
-
-      {!showInitialLoader && showSmallLoadingLogo && (
-        <div className="fixed top-6 right-6 z-[9996] pointer-events-none">
-          <div className="bg-white/70 backdrop-blur-md rounded-full p-3 shadow-2xl border border-white/50">
-            <div className="h-7 w-7 rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin"></div>
-          </div>
         </div>
       )}
 
@@ -770,7 +708,7 @@ export default function GalleryPage() {
 
       {showLoadReport && (
         <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-white rounded-[2rem] p-6 shadow-2xl text-[#3b3128]">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white rounded-[2rem] p-6 shadow-2xl text-[#3b3128]">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-bold">
@@ -778,11 +716,7 @@ export default function GalleryPage() {
                 </h2>
 
                 <p className="text-sm text-[#6b5c4d] mt-1">
-                  Gesamtzeit: {totalImageLoadDurationMs} ms
-                </p>
-
-                <p className="text-sm text-[#6b5c4d]">
-                  Berichte: {imageLoadReports.length}
+                  Gesamtdauer: {totalImageLoadDurationMs} ms
                 </p>
               </div>
 
@@ -794,88 +728,33 @@ export default function GalleryPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {imageLoadReports.map((report, index) => (
                 <div
                   key={`${report.photoId}-${index}`}
-                  className="bg-[#f7f1e8] border border-[#e0d4c3] rounded-2xl p-4"
+                  className="bg-[#f7f1e8] border border-[#e0d4c3] rounded-2xl p-4 flex items-center justify-between gap-4"
                 >
-                  <p className="font-bold">
-                    Bericht {index + 1} — {report.guestName}
-                  </p>
+                  <div>
+                    <p className="font-bold">
+                      {report.guestName}
+                    </p>
 
-                  <p className="text-sm mt-1">
-                    Status:{" "}
-                    <span
-                      className={
+                    <p
+                      className={`text-sm font-semibold ${
                         report.success
                           ? "text-green-700"
                           : "text-red-700"
-                      }
+                      }`}
                     >
                       {report.success
                         ? "geladen"
-                        : "aufgegeben"}
-                    </span>
-                  </p>
-
-                  <p className="text-sm">
-                    Ladezeit: {report.durationMs} ms
-                  </p>
-
-                  <p className="text-sm">
-                    Versuche: {report.attempts}
-                  </p>
-
-                  <p className="text-sm">
-                    Erster Fehlversuch:{" "}
-                    {report.firstFailureReason}
-                  </p>
-
-                  <div className="mt-3 bg-white/70 rounded-xl p-3 border border-[#e0d4c3]">
-                    <p className="text-sm font-bold mb-2">
-                      Einzelne Versuche:
+                        : "nicht geladen"}
                     </p>
-
-                    <div className="space-y-2">
-                      {report.attemptReports.map(
-                        (attempt, attemptIndex) => (
-                          <div
-                            key={attemptIndex}
-                            className="text-xs bg-white rounded-lg p-2 border border-[#eadfce]"
-                          >
-                            <p className="font-bold">
-                              {attempt.label}
-                            </p>
-
-                            <p>
-                              Status:{" "}
-                              <span
-                                className={
-                                  attempt.success
-                                    ? "text-green-700"
-                                    : "text-red-700"
-                                }
-                              >
-                                {attempt.success
-                                  ? "geladen"
-                                  : "fehlgeschlagen"}
-                              </span>
-                            </p>
-
-                            <p>
-                              Dauer: {attempt.durationMs} ms
-                            </p>
-
-                            <p>Grund: {attempt.reason}</p>
-                          </div>
-                        )
-                      )}
-                    </div>
                   </div>
 
-                  <p className="text-xs mt-2 break-all text-[#6b5c4d]">
-                    {report.url}
+                  <p className="text-sm font-bold text-[#3b3128]">
+                    {report.attempts} Versuch
+                    {report.attempts === 1 ? "" : "e"}
                   </p>
                 </div>
               ))}
