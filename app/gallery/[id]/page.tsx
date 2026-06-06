@@ -31,12 +31,12 @@ type ImageLoadReport = {
 const CONCURRENT_LOADS = 20;
 
 const PRELOAD_ATTEMPTS = 20;
-const PRELOAD_TIMEOUT_MS = 800;
+const PRELOAD_TIMEOUT_MS = 1200;
 const PRELOAD_RETRY_DELAY_MS = 50;
 
 const FINAL_RETRY_CONCURRENT_LOADS = 4;
 const FINAL_RETRY_ATTEMPTS = 20;
-const FINAL_RETRY_TIMEOUT_MS = 800;
+const FINAL_RETRY_TIMEOUT_MS = 1500;
 const FINAL_RETRY_DELAY_MS = 200;
 
 const VISIBLE_IMG_RETRIES = 5;
@@ -223,7 +223,12 @@ export default function GalleryPage() {
             });
           };
 
-          img.src = photo.imageUrl;
+          img.src =
+          attempt === 1
+            ? photo.imageUrl
+            : `${photo.imageUrl}${
+                photo.imageUrl.includes("?") ? "&" : "?"
+              }retry=${Date.now()}-${attempt}`;
         });
 
         if (result.success) {
