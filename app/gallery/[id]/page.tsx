@@ -519,6 +519,62 @@ export default function GalleryPage() {
     setDownloading(false);
   }
 
+async function shareSinglePhoto(photo: Photo) {
+  try {
+    const response = await fetch(photo.imageUrl);
+
+    if (!response.ok) {
+      throw new Error("Bild konnte nicht geladen werden.");
+    }
+
+    const blob = await response.blob();
+
+    const safeName = String(photo.guestName || "gast").replace(
+      /[^a-zA-Z0-9_-]/g,
+      "_"
+    );
+
+    const file = new File(
+      [blob],
+      `${safeName}-${photo.id}.jpg`,
+      {
+        type: blob.type || "image/jpeg",
+      }
+    );
+
+    if (
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      await navigator.share({
+        files: [file],
+        title: "WeddingSpace Foto",
+      });
+
+      return;
+    }
+
+    if (navigator.share) {
+      await navigator.share({
+        title: "WeddingSpace Foto",
+        url: photo.imageUrl,
+      });
+
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = photo.imageUrl;
+    link.download = `${safeName}-${photo.id}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    console.error(error);
+    alert("Foto konnte nicht geteilt werden.");
+  }
+}
+
   return (
     <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
       {showInitialLoader && (
@@ -807,16 +863,15 @@ export default function GalleryPage() {
               }`}
             />
 
-            {!shouldBlurPhotos && (
-              <a
-                href={selectedPhoto.imageUrl}
-                download
-                target="_blank"
-                className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
-              >
-                Foto herunterladen
-              </a>
-            )}
+         {!shouldBlurPhotos && (
+  <button
+    onClick={() => shareSinglePhoto(selectedPhoto)}
+    className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+  >
+    Foto herunterladen
+  </button>
+)}
+
           </div>
         </div>
       )}
