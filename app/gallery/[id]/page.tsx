@@ -866,7 +866,7 @@ async function shareSinglePhoto(photo: Photo) {
 {!shouldBlurPhotos && (
   <div className="mt-4 text-center">
     <p className="bg-white/90 text-[#3b3128] p-4 rounded-2xl font-bold shadow-lg">
-      Bild gedrückt halten und „Bild sichern“ wählen
+      Bild gedrückt halten zum Speichern
     </p>
   </div>
 )}
