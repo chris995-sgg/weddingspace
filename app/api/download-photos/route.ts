@@ -15,16 +15,16 @@ type DownloadResult = {
   buffer?: Buffer;
 };
 
-const DOWNLOAD_CONCURRENT_LOADS = 10;
+const DOWNLOAD_CONCURRENT_LOADS = 20;
 
-const DOWNLOAD_ATTEMPTS = 5;
-const DOWNLOAD_TIMEOUT_MS = 5000;
-const DOWNLOAD_RETRY_DELAY_MS = 200;
+const DOWNLOAD_ATTEMPTS = 20;
+const DOWNLOAD_TIMEOUT_MS = 1200;
+const DOWNLOAD_RETRY_DELAY_MS = 100;
 
 const FINAL_DOWNLOAD_CONCURRENT_LOADS = 4;
-const FINAL_DOWNLOAD_ATTEMPTS = 5;
-const FINAL_DOWNLOAD_TIMEOUT_MS = 10000;
-const FINAL_DOWNLOAD_RETRY_DELAY_MS = 500;
+const FINAL_DOWNLOAD_ATTEMPTS =  20;
+const FINAL_DOWNLOAD_TIMEOUT_MS = 5000;
+const FINAL_DOWNLOAD_RETRY_DELAY_MS = 200;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
