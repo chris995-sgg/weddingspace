@@ -863,13 +863,12 @@ async function shareSinglePhoto(photo: Photo) {
               }`}
             />
 
-         {!shouldBlurPhotos && (
-  <button
-    onClick={() => shareSinglePhoto(selectedPhoto)}
-    className="block mt-4 text-center bg-[#c8ad72] text-white p-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
-  >
-    Foto herunterladen
-  </button>
+{!shouldBlurPhotos && (
+  <div className="mt-4 text-center">
+    <p className="bg-white/90 text-[#3b3128] p-4 rounded-2xl font-bold shadow-lg">
+      Bild gedrückt halten und „Bild sichern“ wählen
+    </p>
+  </div>
 )}
 
           </div>
