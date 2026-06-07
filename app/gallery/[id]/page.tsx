@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
+import JSZip from "jszip";
 
 import {
   collection,
@@ -471,53 +472,69 @@ export default function GalleryPage() {
     );
   }
 
-  async function downloadSelectedPhotos() {
-    if (selectedPhotoIds.length === 0) {
-      alert("Bitte wähle mindestens ein Foto aus.");
-      return;
-    }
-
-    setDownloading(true);
-
-    try {
-      const selectedPhotos = photos.filter((photo) =>
-        selectedPhotoIds.includes(photo.id)
-      );
-
-      const response = await fetch("/api/download-photos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          photos: selectedPhotos,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Download fehlgeschlagen.");
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "weddingspace-fotos.zip";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 4000);
-    } catch (error) {
-      console.error(error);
-      alert("Download fehlgeschlagen.");
-    }
-
-    setDownloading(false);
+ async function downloadSelectedPhotos() {
+  if (selectedPhotoIds.length === 0) {
+    alert("Bitte wähle mindestens ein Foto aus.");
+    return;
   }
+
+  setDownloading(true);
+
+  try {
+    const selectedPhotos = photos.filter((photo) =>
+      selectedPhotoIds.includes(photo.id)
+    );
+
+    const zip = new JSZip();
+
+    await Promise.all(
+      selectedPhotos.map(async (photo) => {
+        const response = await fetch(photo.imageUrl, {
+          cache: "force-cache",
+        });
+
+        if (!response.ok) {
+          console.error(
+            "Bild konnte nicht geladen werden:",
+            photo.imageUrl
+          );
+          return;
+        }
+
+        const blob = await response.blob();
+
+        const safeName = String(photo.guestName || "gast").replace(
+          /[^a-zA-Z0-9_-]/g,
+          "_"
+        );
+
+        zip.file(`${safeName}-${photo.id}.jpg`, blob);
+      })
+    );
+
+    const zipBlob = await zip.generateAsync({
+      type: "blob",
+    });
+
+    const url = URL.createObjectURL(zipBlob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "weddingspace-fotos.zip";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 4000);
+  } catch (error) {
+    console.error(error);
+    alert("Download fehlgeschlagen.");
+  }
+
+  setDownloading(false);
+}
 
   return (
     <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
