@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 
+
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 
 import {
@@ -14,6 +15,7 @@ import {
 } from "firebase/firestore";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -238,6 +240,25 @@ return (
                       Galerie
                     </a>
                   </div>
+
+                  <div className="bg-white/60 rounded-2xl p-4 shadow-lg text-center">
+                <p className="text-sm font-bold text-[#3b3128] mb-3">
+                  Rückmeldung
+                </p>
+
+                <QRCodeCanvas
+                  value={`${window.location.origin}/rsvp/${wedding.id}`}
+                  size={96}
+                />
+
+                <Link
+                  href={`/dashboard/${wedding.id}/rsvp`}
+                  className="block mt-4 bg-[#c8ad72] text-white px-4 py-3 rounded-2xl font-bold hover:opacity-90 transition"
+                >
+                  Rückmeldungen ansehen
+                </Link>
+              </div>
+                  
                 </div>
               </div>
             ))}
