@@ -24,6 +24,8 @@ type Wedding = {
   title: string;
   ownerId: string;
   ownerEmail?: string;
+  galleryEnabled?: boolean;
+  rsvpEnabled?: boolean;
 };
 
 export default function DashboardPage() {
@@ -102,7 +104,7 @@ export default function DashboardPage() {
         ownerId: user.uid,
         ownerEmail: user.email,
         createdAt: new Date(),
-        
+
         galleryEnabled: true,
         rsvpEnabled: true,
 
@@ -192,80 +194,104 @@ return (
           </p>
         ) : (
           <div className="grid gap-4">
-            {weddings.map((wedding) => (
-              <div
-                key={wedding.id}
-                className="bg-white/50 backdrop-blur rounded-[1.5rem] p-5 shadow-xl border border-white/50 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
-              >
-                <div>
-                  <h3 className="text-xl font-bold text-[#3b3128]">
-                    {wedding.title}
-                  </h3>
 
-                  <p className="text-sm text-[#6b5c4d] mt-1">
-                    ID: {wedding.id}
-                  </p>
-                </div>
+{weddings.map((wedding) => (
+  <div
+    key={wedding.id}
+    className="bg-white/50 backdrop-blur rounded-[2rem] p-6 shadow-xl border border-white/50"
+  >
+    {/* Kopfbereich: Eventname links, Zahnrad rechts */}
+    <div className="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h3 className="text-2xl font-bold text-[#3b3128]">
+          {wedding.title}
+        </h3>
 
-                <div className="flex flex-col md:flex-row items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      shareGalleryLink(wedding.id)
-                    }
-                    className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center"
-                    title="Link teilen"
-                  >
-                    <QRCodeCanvas
-                      value={`${window.location.origin}/upload/${wedding.id}`}
-                      size={96}
-                    />
-                  </button>
+        <p className="text-sm text-[#6b5c4d] mt-1">
+          ID: {wedding.id}
+        </p>
+      </div>
 
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <a
-                      href={`/dashboard/wedding/${wedding.id}`}
-                      className="bg-white/70 backdrop-blur-xl text-[#4a4036] px-4 py-2 rounded-2xl font-semibold shadow-lg border border-white/40 hover:bg-white/80 transition"
-                    >
-                      Bearbeiten
-                    </a>
+      <Link
+        href={`/dashboard/wedding/${wedding.id}`}
+        className="w-11 h-11 rounded-full bg-white/75 border border-white/50 shadow-lg flex items-center justify-center text-xl text-[#4a4036] hover:bg-white transition"
+        title="Bearbeiten"
+      >
+        ⚙
+      </Link>
+    </div>
 
-                    <a
-                      href={`/upload/${wedding.id}`}
-                      className="bg-[#c8ad72] text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:opacity-90 transition"
-                    >
-                      Upload
-                    </a>
+    {/* Upload / Galerie Bereich */}
+    {wedding.galleryEnabled !== false ? (
+      <div className="flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => shareGalleryLink(wedding.id)}
+          className="cursor-pointer hover:scale-105 transition mb-5"
+          title="Upload-Link teilen"
+        >
+          <QRCodeCanvas
+            value={`${window.location.origin}/upload/${wedding.id}`}
+            size={140}
+          />
+        </button>
 
-                    <a
-                      href={`/gallery/${wedding.id}`}
-                      className="bg-[#3b3128] text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:bg-[#2d241d] transition"
-                    >
-                      Galerie
-                    </a>
-                  </div>
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <Link
+            href={`/upload/${wedding.id}`}
+            className="bg-[#c8ad72] text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:opacity-90 transition"
+          >
+            Upload
+          </Link>
 
-                  <div className="bg-white/60 rounded-2xl p-4 shadow-lg text-center">
-                <p className="text-sm font-bold text-[#3b3128] mb-3">
-                  Rückmeldung
-                </p>
+          <Link
+            href={`/gallery/${wedding.id}`}
+            className="bg-[#3b3128] text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:bg-[#2d241d] transition"
+          >
+            Galerie
+          </Link>
+        </div>
+      </div>
+    ) : (
+      <div className="mb-8 text-center">
+        <p className="text-sm font-semibold text-[#6b5c4d]">
+          Galerie deaktiviert
+        </p>
+      </div>
+    )}
 
-                <QRCodeCanvas
-                  value={`${window.location.origin}/rsvp/${wedding.id}`}
-                  size={96}
-                />
+    {/* Rückmeldung Bereich */}
+    {wedding.rsvpEnabled !== false ? (
+      <div className="flex flex-col items-center">
+        <Link
+          href={`/rsvp/${wedding.id}`}
+          className="cursor-pointer hover:scale-105 transition mb-5"
+          title="Zur Rückmeldung"
+        >
+          <QRCodeCanvas
+            value={`${window.location.origin}/rsvp/${wedding.id}`}
+            size={140}
+          />
+        </Link>
 
-                <Link
-                  href={`/dashboard/${wedding.id}/rsvp`}
-                  className="block mt-4 bg-[#c8ad72] text-white px-4 py-3 rounded-2xl font-bold hover:opacity-90 transition"
-                >
-                  Rückmeldungen ansehen
-                </Link>
-              </div>
-                  
-                </div>
-              </div>
-            ))}
+        <Link
+          href={`/dashboard/${wedding.id}/rsvp`}
+          className="bg-[#c8ad72] text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:opacity-90 transition"
+        >
+          Rückmeldungen ansehen
+        </Link>
+      </div>
+    ) : (
+      <div className="text-center">
+        <p className="text-sm font-semibold text-[#6b5c4d]">
+          Rückmeldung deaktiviert
+        </p>
+      </div>
+    )}
+  </div>
+))}
+
+
           </div>
         )}
       </div>
