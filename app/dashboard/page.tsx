@@ -38,6 +38,11 @@ export default function DashboardPage() {
   const [newWeddingTitle, setNewWeddingTitle] =
     useState("");
 
+    const [openedQrCode, setOpenedQrCode] = useState<{
+      title: string;
+      url: string;
+    } | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -260,17 +265,45 @@ return (
     {wedding.galleryEnabled !== false ? (
       <div className="flex flex-col items-center">
 
-        <button
-          type="button"
-          onClick={() => shareGalleryLink(wedding.id)}
-          className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center mb-5"
-          title="Upload-Link teilen"
-        >
-          <QRCodeCanvas
-            value={`${window.location.origin}/upload/${wedding.id}`}
-            size={96}
-          />
-        </button>
+ <div className="relative mb-5">
+  <button
+    type="button"
+    onClick={() => shareGalleryLink(wedding.id)}
+    className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center"
+    title="Upload-Link teilen"
+  >
+    <QRCodeCanvas
+      value={`${window.location.origin}/upload/${wedding.id}`}
+      size={96}
+    />
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      setOpenedQrCode({
+        title: "Upload QR-Code",
+        url: `${window.location.origin}/upload/${wedding.id}`,
+      })
+    }
+    className="absolute -right-3 -top-3 h-9 w-9 rounded-full bg-white shadow-lg border border-white/60 flex items-center justify-center text-[#3b3128] hover:scale-105 transition"
+    title="QR-Code vergrößern"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.5-3.5" />
+    </svg>
+  </button>
+</div>
 
         <div className="flex flex-wrap justify-center gap-3 mb-8">
           <Link
@@ -300,17 +333,45 @@ return (
     {wedding.rsvpEnabled !== false ? (
       <div className="flex flex-col items-center">
 
-      <button
-        type="button"
-        onClick={() => shareRsvpLink(wedding.id)}
-        className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center mb-5"
-        title="Rückmeldungs-Link teilen"
-      >
-        <QRCodeCanvas
-          value={`${window.location.origin}/rsvp/${wedding.id}`}
-          size={96}
-        />
+<div className="relative mb-5">
+  <button
+    type="button"
+    onClick={() => shareRsvpLink(wedding.id)}
+    className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center"
+    title="Rückmeldungs-Link teilen"
+  >
+    <QRCodeCanvas
+      value={`${window.location.origin}/rsvp/${wedding.id}`}
+      size={96}
+    />
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      setOpenedQrCode({
+        title: "Rückmeldung QR-Code",
+        url: `${window.location.origin}/rsvp/${wedding.id}`,
+      })
+    }
+    className="absolute -right-3 -top-3 h-9 w-9 rounded-full bg-white shadow-lg border border-white/60 flex items-center justify-center text-[#3b3128] hover:scale-105 transition"
+    title="QR-Code vergrößern"
+  >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
       </button>
+    </div>
 
         <Link
           href={`/dashboard/${wedding.id}/rsvp`}
@@ -334,6 +395,38 @@ return (
         )}
       </div>
     </div>
+{openedQrCode && (
+  <div className="fixed inset-0 bg-black/85 z-50 overflow-hidden flex items-center justify-center px-4">
+    <div className="w-full max-w-md flex flex-col items-center justify-center">
+      <div className="w-full flex justify-between items-center mb-4">
+        <p className="text-white text-sm font-semibold">
+          {openedQrCode.title}
+        </p>
+
+        <button
+          onClick={() => setOpenedQrCode(null)}
+          className="bg-white/90 text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg"
+        >
+          Schließen
+        </button>
+      </div>
+
+      <div className="bg-white p-6 rounded-[1.5rem] shadow-2xl">
+        <QRCodeCanvas
+          value={openedQrCode.url}
+          size={260}
+        />
+      </div>
+
+      <div className="mt-4 text-center">
+        <p className="bg-[#c8ad72] text-white p-4 rounded-2xl font-bold shadow-lg">
+          Bild gedrückt halten zum Speichern
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+
   </main>
 );
 }
