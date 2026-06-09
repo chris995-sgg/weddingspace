@@ -10,7 +10,6 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 
 export default function RsvpPage() {
   const params = useParams();
@@ -19,7 +18,7 @@ export default function RsvpPage() {
   const [eventTitle, setEventTitle] = useState("");
   const [guestName, setGuestName] = useState("");
   const [status, setStatus] = useState<"yes" | "no">("yes");
-  const [guestCount, setGuestCount] = useState(1);
+  const [guestCount, setGuestCount] = useState("1");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -44,10 +43,15 @@ export default function RsvpPage() {
       return;
     }
 
-    if (status === "yes" && guestCount < 1) {
-      alert("Bitte gib an, mit wie vielen Personen du kommst.");
-      return;
-    }
+  const guestCountNumber = Number(guestCount);
+
+if (
+  status === "yes" &&
+  (!guestCount || guestCountNumber < 1)
+) {
+  alert("Bitte gib an, mit wie vielen Personen du kommst.");
+  return;
+}
 
     setSending(true);
 
@@ -55,7 +59,7 @@ export default function RsvpPage() {
       await addDoc(collection(db, "weddings", weddingId, "rsvps"), {
         guestName: guestName.trim(),
         status,
-        guestCount: status === "yes" ? guestCount : 0,
+        guestCount: status === "yes" ? guestCountNumber : 0,
         message: message.trim(),
         createdAt: serverTimestamp(),
       });
@@ -89,12 +93,6 @@ export default function RsvpPage() {
             Deine Rückmeldung wurde gespeichert.
           </p>
 
-          <Link
-            href={`/upload/${weddingId}`}
-            className="block mt-8 bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
-          >
-            Zur Foto-Seite
-          </Link>
         </div>
       </main>
     );
@@ -173,13 +171,12 @@ export default function RsvpPage() {
                 Anzahl Personen
               </label>
 
-              <input
+          <input
                 type="number"
                 min={1}
+                inputMode="numeric"
                 value={guestCount}
-                onChange={(e) =>
-                  setGuestCount(Number(e.target.value))
-                }
+                onChange={(e) => setGuestCount(e.target.value)}
                 className="w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-4 py-3 text-[#3b3128] outline-none focus:ring-2 focus:ring-[#d4b06a]"
               />
             </div>

@@ -284,19 +284,17 @@ setWedding((prev) =>
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setGalleryEnabled((prev) => !prev)}
-        className={`relative h-8 w-14 rounded-full transition ${
-          galleryEnabled ? "bg-[#c8ad72]" : "bg-[#d8cfc3]"
-        }`}
-      >
-        <span
-          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
-            galleryEnabled ? "left-7" : "left-1"
-          }`}
-        />
-      </button>
+<button
+  type="button"
+  onClick={() => setGalleryEnabled((prev) => !prev)}
+  aria-pressed={galleryEnabled}
+  className={`h-12 w-12 rounded-full border-4 shadow-md transition ${
+    galleryEnabled
+      ? "bg-[#c8ad72] border-[#c8ad72]"
+      : "bg-white border-[#c8ad72]"
+  }`}
+></button>
+
     </label>
 
     <label className="flex items-center justify-between gap-4 border-t border-white/60 pt-5">
@@ -310,19 +308,18 @@ setWedding((prev) =>
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setRsvpEnabled((prev) => !prev)}
-        className={`relative h-8 w-14 rounded-full transition ${
-          rsvpEnabled ? "bg-[#c8ad72]" : "bg-[#d8cfc3]"
-        }`}
-      >
-        <span
-          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
-            rsvpEnabled ? "left-7" : "left-1"
-          }`}
-        />
-      </button>
+<button
+  type="button"
+  onClick={() => setRsvpEnabled((prev) => !prev)}
+  aria-pressed={rsvpEnabled}
+  className={`h-12 w-12 rounded-full border-4 shadow-md transition ${
+    rsvpEnabled
+      ? "bg-[#c8ad72] border-[#c8ad72]"
+      : "bg-white border-[#c8ad72]"
+  }`}
+></button>
+
+
     </label>
   </div>
 

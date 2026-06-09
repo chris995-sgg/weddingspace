@@ -232,9 +232,9 @@ return (
         </p>
       </div>
 
-   <Link
+<Link
   href={`/dashboard/wedding/${wedding.id}`}
-  className="w-11 h-11 rounded-full bg-white/75 border border-white/50 shadow-lg flex items-center justify-center text-[#4a4036] hover:bg-white hover:scale-105 transition"
+  className="p-1 text-[#4a4036] hover:text-[#c8ad72] hover:scale-110 transition"
   title="Event bearbeiten"
   aria-label="Event bearbeiten"
 >
@@ -246,7 +246,7 @@ return (
     strokeWidth="2.4"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="w-5 h-5"
+    className="w-7 h-7"
   >
     <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
     <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.05a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.05a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.05a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.36.6.98.98 1.55 1H21a2 2 0 0 1 0 4h-.05A1.7 1.7 0 0 0 19.4 15Z" />
