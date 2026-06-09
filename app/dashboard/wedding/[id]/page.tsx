@@ -220,31 +220,44 @@ setWedding((prev) =>
     oder erst ab einem bestimmten Datum.
   </p>
 
-  <div className="space-y-4">
-    <label className="flex items-center gap-3 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer">
-      <input
-        type="radio"
-        checked={galleryVisibilityMode === "instant"}
-        onChange={() => setGalleryVisibilityMode("instant")}
-      />
 
-      <span className="font-semibold text-[#3b3128]">
-        Bilder sofort sichtbar
-      </span>
-    </label>
+<div className="space-y-4">
+  <button
+    type="button"
+    onClick={() => setGalleryVisibilityMode("instant")}
+    className="w-full flex items-center justify-between gap-4 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer text-left"
+  >
+    <span className="font-semibold text-[#3b3128]">
+      Bilder sofort sichtbar
+    </span>
 
-    <label className="flex items-center gap-3 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer">
-      <input
-        type="radio"
-        checked={galleryVisibilityMode === "date"}
-        onChange={() => setGalleryVisibilityMode("date")}
-      />
+    <span
+      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+        galleryVisibilityMode === "instant"
+          ? "bg-[#c8ad72] border-[#c8ad72]"
+          : "bg-white border-[#c8ad72]"
+      }`}
+    />
+  </button>
 
-      <span className="font-semibold text-[#3b3128]">
-        Bilder erst ab Datum sichtbar
-      </span>
-    </label>
-  </div>
+  <button
+    type="button"
+    onClick={() => setGalleryVisibilityMode("date")}
+    className="w-full flex items-center justify-between gap-4 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer text-left"
+  >
+    <span className="font-semibold text-[#3b3128]">
+      Bilder erst ab Datum sichtbar
+    </span>
+
+    <span
+      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+        galleryVisibilityMode === "date"
+          ? "bg-[#c8ad72] border-[#c8ad72]"
+          : "bg-white border-[#c8ad72]"
+      }`}
+    />
+  </button>
+</div>
 
   {galleryVisibilityMode === "date" && (
     <div className="mt-5">
@@ -288,11 +301,11 @@ setWedding((prev) =>
   type="button"
   onClick={() => setGalleryEnabled((prev) => !prev)}
   aria-pressed={galleryEnabled}
-  className={`h-12 w-12 rounded-full border-4 shadow-md transition ${
-    galleryEnabled
-      ? "bg-[#c8ad72] border-[#c8ad72]"
-      : "bg-white border-[#c8ad72]"
-  }`}
+  className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+  galleryEnabled
+    ? "bg-[#c8ad72] border-[#c8ad72]"
+    : "bg-white border-[#c8ad72]"
+}`}
 ></button>
 
     </label>
@@ -312,11 +325,11 @@ setWedding((prev) =>
   type="button"
   onClick={() => setRsvpEnabled((prev) => !prev)}
   aria-pressed={rsvpEnabled}
-  className={`h-12 w-12 rounded-full border-4 shadow-md transition ${
-    rsvpEnabled
-      ? "bg-[#c8ad72] border-[#c8ad72]"
-      : "bg-white border-[#c8ad72]"
-  }`}
+  className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+  rsvpEnabled
+    ? "bg-[#c8ad72] border-[#c8ad72]"
+    : "bg-white border-[#c8ad72]"
+}`}
 ></button>
 
 
