@@ -302,7 +302,7 @@ setWedding((prev) =>
     </div>
 
     <span
-      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
         galleryEnabled
           ? "bg-[#c8ad72] border-[#c8ad72]"
           : "bg-white border-[#c8ad72]"
@@ -326,7 +326,7 @@ setWedding((prev) =>
     </div>
 
     <span
-      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
         rsvpEnabled
           ? "bg-[#c8ad72] border-[#c8ad72]"
           : "bg-white border-[#c8ad72]"
