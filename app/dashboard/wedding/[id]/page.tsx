@@ -232,7 +232,7 @@ setWedding((prev) =>
     </span>
 
     <span
-      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
         galleryVisibilityMode === "instant"
           ? "bg-[#c8ad72] border-[#c8ad72]"
           : "bg-white border-[#c8ad72]"
@@ -280,61 +280,60 @@ setWedding((prev) =>
   )}
 </div>
 
-<div className="bg-white/60 rounded-[2rem] p-6 shadow-2xl border border-white/50">
+<div className="mb-6 bg-white/50 rounded-[1.5rem] p-4 md:p-5 border border-white/50 shadow-lg overflow-hidden">
   <h2 className="text-xl font-bold text-[#3b3128] mb-5">
     Funktionen
   </h2>
 
-  <div className="space-y-5">
-    <label className="flex items-center justify-between gap-4">
-      <div>
-        <p className="font-bold text-[#3b3128]">
-          Galerie & Foto-Upload
-        </p>
+  <div className="space-y-4">
+  <button
+    type="button"
+    onClick={() => setGalleryEnabled((prev) => !prev)}
+    className="w-full flex items-center justify-between gap-4 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer text-left"
+  >
+    <div>
+      <p className="font-bold text-[#3b3128]">
+        Galerie & Foto-Upload
+      </p>
 
-        <p className="text-sm text-[#6b5c4d] mt-1">
-          Gäste können Fotos hochladen und die Galerie ansehen.
-        </p>
-      </div>
+      <p className="text-sm text-[#6b5c4d] mt-1">
+        Gäste können Fotos hochladen und die Galerie ansehen.
+      </p>
+    </div>
 
-<button
-  type="button"
-  onClick={() => setGalleryEnabled((prev) => !prev)}
-  aria-pressed={galleryEnabled}
-  className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
-  galleryEnabled
-    ? "bg-[#c8ad72] border-[#c8ad72]"
-    : "bg-white border-[#c8ad72]"
-}`}
-></button>
+    <span
+      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+        galleryEnabled
+          ? "bg-[#c8ad72] border-[#c8ad72]"
+          : "bg-white border-[#c8ad72]"
+      }`}
+    />
+  </button>
 
-    </label>
+  <button
+    type="button"
+    onClick={() => setRsvpEnabled((prev) => !prev)}
+    className="w-full flex items-center justify-between gap-4 bg-white/70 p-4 rounded-2xl border border-white/50 cursor-pointer text-left"
+  >
+    <div>
+      <p className="font-bold text-[#3b3128]">
+        Rückmeldung
+      </p>
 
-    <label className="flex items-center justify-between gap-4 border-t border-white/60 pt-5">
-      <div>
-        <p className="font-bold text-[#3b3128]">
-          Rückmeldung
-        </p>
+      <p className="text-sm text-[#6b5c4d] mt-1">
+        Gäste können zu- oder absagen und eine Nachricht hinterlassen.
+      </p>
+    </div>
 
-        <p className="text-sm text-[#6b5c4d] mt-1">
-          Gäste können zu- oder absagen und eine Nachricht hinterlassen.
-        </p>
-      </div>
-
-<button
-  type="button"
-  onClick={() => setRsvpEnabled((prev) => !prev)}
-  aria-pressed={rsvpEnabled}
-  className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
-  rsvpEnabled
-    ? "bg-[#c8ad72] border-[#c8ad72]"
-    : "bg-white border-[#c8ad72]"
-}`}
-></button>
-
-
-    </label>
-  </div>
+    <span
+      className={`h-10 w-10 min-w-10 min-h-10 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
+        rsvpEnabled
+          ? "bg-[#c8ad72] border-[#c8ad72]"
+          : "bg-white border-[#c8ad72]"
+      }`}
+    />
+  </button>
+</div>
 
   <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
     <div className="rounded-2xl bg-white/50 border border-white/50 p-4">
