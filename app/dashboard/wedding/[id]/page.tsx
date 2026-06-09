@@ -16,6 +16,8 @@ import Link from "next/link";
 type Wedding = {
   title: string;
   ownerEmail?: string;
+  galleryEnabled?: boolean;
+  rsvpEnabled?: boolean;
   galleryVisibilityMode?: "instant" | "date";
   galleryRevealAt?: {
     toDate: () => Date;
@@ -31,6 +33,9 @@ const [wedding, setWedding] = useState<Wedding | null>(null);
 const [title, setTitle] = useState("");
 const [loading, setLoading] = useState(true);
 const [saving, setSaving] = useState(false);
+const [galleryEnabled, setGalleryEnabled] = useState(true);
+const [rsvpEnabled, setRsvpEnabled] = useState(true);
+
 
 const [galleryVisibilityMode, setGalleryVisibilityMode] =
   useState<"instant" | "date">("instant");
@@ -45,6 +50,10 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
 
        if (snapshot.exists()) {
   const data = snapshot.data() as Wedding;
+
+  setGalleryEnabled(data.galleryEnabled ?? true);
+  setRsvpEnabled(data.rsvpEnabled ?? true);
+
 
   setWedding(data);
   setTitle(data.title);
@@ -98,17 +107,27 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
         galleryVisibilityMode === "date"
           ? Timestamp.fromDate(new Date(galleryRevealAt))
           : null,
+
+    galleryEnabled,
+    rsvpEnabled,
+
     });
 
-    setWedding((prev) =>
-      prev
-        ? {
-            ...prev,
-            title: title.trim(),
-            galleryVisibilityMode,
-          }
-        : prev
-    );
+setWedding((prev) =>
+  prev
+    ? {
+        ...prev,
+        title: title.trim(),
+        galleryVisibilityMode,
+        galleryEnabled,
+        rsvpEnabled,
+        galleryRevealAt:
+          galleryVisibilityMode === "date"
+            ? Timestamp.fromDate(new Date(galleryRevealAt))
+            : null,
+      }
+    : prev
+);
 
     alert("Einstellungen gespeichert!");
   } catch (error) {
@@ -241,10 +260,102 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
     className="w-[250px] md:w-full max-w-full bg-white/70 border border-[#d8cfc3] rounded-2xl px-3 py-3 text-[#3b3128] text-base outline-none focus:ring-2 focus:ring-[#c8ad72]"
   />
 </div>
+
+
+
     </div>
   )}
 </div>
 
+<div className="bg-white/60 rounded-[2rem] p-6 shadow-2xl border border-white/50">
+  <h2 className="text-xl font-bold text-[#3b3128] mb-5">
+    Funktionen
+  </h2>
+
+  <div className="space-y-5">
+    <label className="flex items-center justify-between gap-4">
+      <div>
+        <p className="font-bold text-[#3b3128]">
+          Galerie & Foto-Upload
+        </p>
+
+        <p className="text-sm text-[#6b5c4d] mt-1">
+          Gäste können Fotos hochladen und die Galerie ansehen.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setGalleryEnabled((prev) => !prev)}
+        className={`relative h-8 w-14 rounded-full transition ${
+          galleryEnabled ? "bg-[#c8ad72]" : "bg-[#d8cfc3]"
+        }`}
+      >
+        <span
+          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
+            galleryEnabled ? "left-7" : "left-1"
+          }`}
+        />
+      </button>
+    </label>
+
+    <label className="flex items-center justify-between gap-4 border-t border-white/60 pt-5">
+      <div>
+        <p className="font-bold text-[#3b3128]">
+          Rückmeldung
+        </p>
+
+        <p className="text-sm text-[#6b5c4d] mt-1">
+          Gäste können zu- oder absagen und eine Nachricht hinterlassen.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setRsvpEnabled((prev) => !prev)}
+        className={`relative h-8 w-14 rounded-full transition ${
+          rsvpEnabled ? "bg-[#c8ad72]" : "bg-[#d8cfc3]"
+        }`}
+      >
+        <span
+          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
+            rsvpEnabled ? "left-7" : "left-1"
+          }`}
+        />
+      </button>
+    </label>
+  </div>
+
+  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="rounded-2xl bg-white/50 border border-white/50 p-4">
+      <p className="text-sm font-semibold text-[#6b5c4d]">
+        Galerie:
+        <span
+          className={`ml-2 ${
+            galleryEnabled ? "text-green-700" : "text-red-700"
+          }`}
+        >
+          {galleryEnabled ? "Aktiv" : "Deaktiviert"}
+        </span>
+      </p>
+    </div>
+
+    <div className="rounded-2xl bg-white/50 border border-white/50 p-4">
+      <p className="text-sm font-semibold text-[#6b5c4d]">
+        Rückmeldung:
+        <span
+          className={`ml-2 ${
+            rsvpEnabled ? "text-green-700" : "text-red-700"
+          }`}
+        >
+          {rsvpEnabled ? "Aktiv" : "Deaktiviert"}
+        </span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div className="mt-6">
       <button
         onClick={saveTitle}
         disabled={saving}
@@ -259,6 +370,7 @@ const [galleryRevealAt, setGalleryRevealAt] = useState("");
       >
         Event löschen
       </button>
+      </div>
 
     
   </div>

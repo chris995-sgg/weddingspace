@@ -55,6 +55,7 @@ export default function GalleryPage() {
 
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [eventTitle, setEventTitle] = useState("");
+  const [galleryEnabled, setGalleryEnabled] = useState(true);
 
   const [selectedPhoto, setSelectedPhoto] =
     useState<Photo | null>(null);
@@ -140,6 +141,7 @@ export default function GalleryPage() {
       if (!snapshot.exists()) return;
 
       const data = snapshot.data();
+      setGalleryEnabled(data.galleryEnabled ?? true);
 
       setEventTitle(data.title || "Galerie");
 
@@ -575,6 +577,35 @@ async function shareSinglePhoto(photo: Photo) {
   }
 }
 
+if (!galleryEnabled) {
+  return (
+    <main className="min-h-[100dvh] flex items-center justify-center p-6 text-black">
+      <div className="w-full max-w-md bg-white/60 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
+        <div className="mb-6 flex justify-center items-center">
+          <div className="w-20 h-px bg-[#c8ad72]"></div>
+          <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
+          <div className="w-20 h-px bg-[#c8ad72]"></div>
+        </div>
+
+        <h1 className="font-elegant text-4xl font-medium text-[#3b3128]">
+          Galerie deaktiviert
+        </h1>
+
+        <p className="text-[#6b5c4d] mt-4">
+          Die Fotogalerie ist für dieses Event aktuell nicht verfügbar.
+        </p>
+
+        <Link
+          href={`/upload/${weddingId}`}
+          className="block mt-8 bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg"
+        >
+          Zurück
+        </Link>
+      </div>
+    </main>
+  );
+}
+
   return (
     <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
       {showInitialLoader && (
@@ -635,6 +666,7 @@ async function shareSinglePhoto(photo: Photo) {
             </Link>
           </div>
         </div>
+     
 
         <div className="mb-8"></div>
 

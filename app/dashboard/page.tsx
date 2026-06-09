@@ -102,6 +102,10 @@ export default function DashboardPage() {
         ownerId: user.uid,
         ownerEmail: user.email,
         createdAt: new Date(),
+        
+        galleryEnabled: true,
+        rsvpEnabled: true,
+
       });
 
       setNewWeddingTitle("");

@@ -1,18 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import imageCompression from "browser-image-compression";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function UploadPage() {
   const params = useParams();
   const weddingId = params.id as string;
-
+  const [galleryEnabled, setGalleryEnabled] = useState(true);
   const [guestName, setGuestName] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
+
+  useEffect(() => {
+  async function loadWeddingSettings() {
+    try {
+      const weddingRef = doc(db, "weddings", weddingId);
+      const snapshot = await getDoc(weddingRef);
+
+      if (!snapshot.exists()) {
+        setGalleryEnabled(false);
+        return;
+      }
+
+      const data = snapshot.data();
+
+      setGalleryEnabled(data.galleryEnabled ?? true);
+    } catch (error) {
+      console.error(error);
+      setGalleryEnabled(false);
+    }
+  }
+
+  loadWeddingSettings();
+}, [weddingId]);
 
   async function uploadToDropboxWithRetries(
     uploadLink: string,
@@ -186,6 +211,28 @@ export default function UploadPage() {
 
     setLoading(false);
   }
+
+  if (!galleryEnabled) {
+  return (
+    <main className="min-h-[100dvh] flex items-center justify-center p-6 text-black">
+      <div className="w-full max-w-md bg-white/60 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
+        <div className="mb-6 flex justify-center items-center">
+          <div className="w-20 h-px bg-[#c8ad72]"></div>
+          <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
+          <div className="w-20 h-px bg-[#c8ad72]"></div>
+        </div>
+
+        <h1 className="font-elegant text-4xl font-medium text-[#3b3128]">
+          Foto-Upload deaktiviert
+        </h1>
+
+        <p className="text-[#6b5c4d] mt-4">
+          Der Foto-Upload ist für dieses Event aktuell nicht verfügbar.
+        </p>
+      </div>
+    </main>
+  );
+}
 
   return (
 <main className="min-h-screen flex justify-center items-start pt-28 p-6 relative text-black">
