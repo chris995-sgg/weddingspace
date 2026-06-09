@@ -138,6 +138,26 @@ export default function DashboardPage() {
         alert("Link wurde kopiert.");
       }
     }
+
+async function shareRsvpLink(weddingId: string) {
+  const rsvpUrl = `${window.location.origin}/rsvp/${weddingId}`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "WeddingSpace Rückmeldung",
+        text: "Hier kannst du zur Hochzeit zu- oder absagen:",
+        url: rsvpUrl,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    await navigator.clipboard.writeText(rsvpUrl);
+    alert("Link wurde kopiert.");
+  }
+}
+
 return (
   <main className="min-h-screen px-6 pt-16 pb-6 relative text-[#3b3128]">
     <div className="max-w-5xl mx-auto">
@@ -212,27 +232,43 @@ return (
         </p>
       </div>
 
-      <Link
-        href={`/dashboard/wedding/${wedding.id}`}
-        className="w-11 h-11 rounded-full bg-white/75 border border-white/50 shadow-lg flex items-center justify-center text-xl text-[#4a4036] hover:bg-white transition"
-        title="Bearbeiten"
-      >
-        ⚙
-      </Link>
+   <Link
+  href={`/dashboard/wedding/${wedding.id}`}
+  className="w-11 h-11 rounded-full bg-white/75 border border-white/50 shadow-lg flex items-center justify-center text-[#4a4036] hover:bg-white hover:scale-105 transition"
+  title="Event bearbeiten"
+  aria-label="Event bearbeiten"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.4"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-5 h-5"
+  >
+    <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+    <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.05a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.05a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.05a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.36.6.98.98 1.55 1H21a2 2 0 0 1 0 4h-.05A1.7 1.7 0 0 0 19.4 15Z" />
+  </svg>
+</Link>
+
+
     </div>
 
     {/* Upload / Galerie Bereich */}
     {wedding.galleryEnabled !== false ? (
       <div className="flex flex-col items-center">
+
         <button
           type="button"
           onClick={() => shareGalleryLink(wedding.id)}
-          className="cursor-pointer hover:scale-105 transition mb-5"
+          className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center mb-5"
           title="Upload-Link teilen"
         >
           <QRCodeCanvas
             value={`${window.location.origin}/upload/${wedding.id}`}
-            size={140}
+            size={96}
           />
         </button>
 
@@ -263,16 +299,18 @@ return (
     {/* Rückmeldung Bereich */}
     {wedding.rsvpEnabled !== false ? (
       <div className="flex flex-col items-center">
-        <Link
-          href={`/rsvp/${wedding.id}`}
-          className="cursor-pointer hover:scale-105 transition mb-5"
-          title="Zur Rückmeldung"
-        >
-          <QRCodeCanvas
-            value={`${window.location.origin}/rsvp/${wedding.id}`}
-            size={140}
-          />
-        </Link>
+
+      <button
+        type="button"
+        onClick={() => shareRsvpLink(wedding.id)}
+        className="cursor-pointer hover:scale-105 transition bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center mb-5"
+        title="Rückmeldungs-Link teilen"
+      >
+        <QRCodeCanvas
+          value={`${window.location.origin}/rsvp/${wedding.id}`}
+          size={96}
+        />
+      </button>
 
         <Link
           href={`/dashboard/${wedding.id}/rsvp`}
