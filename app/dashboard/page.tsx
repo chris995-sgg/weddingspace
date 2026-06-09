@@ -17,7 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { QRCodeCanvas } from "qrcode.react";
+import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 
 type Wedding = {
   id: string;
@@ -411,13 +411,16 @@ return (
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-[1.5rem] shadow-2xl">
-        <QRCodeCanvas
+        <div className="bg-white p-6 rounded-[1.5rem] shadow-2xl">
+        <QRCodeSVG
           value={openedQrCode.url}
           size={260}
+          bgColor="#ffffff"
+          fgColor="#000000"
+          level="H"
         />
       </div>
-
+      
       <div className="mt-4 text-center">
         <p className="bg-[#c8ad72] text-white p-4 rounded-2xl font-bold shadow-lg">
           Bild gedrückt halten zum Speichern
