@@ -13,6 +13,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  writeBatch,
 } from "firebase/firestore";
 
 import { useParams } from "next/navigation";
@@ -557,6 +558,50 @@ export default function GalleryPage() {
     setDownloading(false);
   }
 
+async function downloadAllPhotos() {
+  if (photos.length === 0) {
+    alert("Es gibt noch keine Fotos.");
+    return;
+  }
+
+  setDownloading(true);
+
+  try {
+    const response = await fetch("/api/download-photos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        photos,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Download fehlgeschlagen.");
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "weddingspace-alle-fotos.zip";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 4000);
+  } catch (error) {
+    console.error(error);
+    alert("Download fehlgeschlagen.");
+  }
+
+  setDownloading(false);
+}
+
 async function shareSinglePhoto(photo: Photo) {
   try {
     const response = await fetch(photo.imageUrl);
@@ -665,6 +710,57 @@ async function deletePhoto(photoId: string) {
   setDeletingPhotoId(null);
 }
 
+async function deleteAllPhotos() {
+  if (!isAdmin) return;
+
+  if (photos.length === 0) {
+    alert("Es gibt keine Bilder zum Löschen.");
+    return;
+  }
+
+  const confirmed = confirm(
+    `Möchtest du wirklich alle ${photos.length} Bilder aus der Galerie löschen? Diese Aktion kann nicht rückgängig gemacht werden.`
+  );
+
+  if (!confirmed) return;
+
+  const secondConfirmed = confirm(
+    "Bitte nochmals bestätigen: Alle Bilder werden aus der Galerie entfernt."
+  );
+
+  if (!secondConfirmed) return;
+
+  setDeletingPhotoId("all");
+
+  try {
+    const batch = writeBatch(db);
+
+    photos.forEach((photo) => {
+      const photoRef = doc(
+        db,
+        "weddings",
+        weddingId,
+        "photos",
+        photo.id
+      );
+
+      batch.delete(photoRef);
+    });
+
+    await batch.commit();
+
+    setSelectedPhotoIds([]);
+    setSelectedPhoto(null);
+
+    alert("Alle Bilder wurden gelöscht.");
+  } catch (error) {
+    console.error(error);
+    alert("Die Bilder konnten nicht gelöscht werden.");
+  }
+
+  setDeletingPhotoId(null);
+}
+
   return (
     <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
       {showInitialLoader && (
@@ -704,26 +800,48 @@ async function deletePhoto(photoId: string) {
             Galerie
           </p>
 
-          <div className="flex flex-col items-center gap-5">
-            <button
-              onClick={downloadSelectedPhotos}
-              disabled={
-                downloading || selectedPhotoIds.length === 0
-              }
-              className="w-full bg-white/60 text-[#3b3128] border border-[#d8cfc3] px-6 py-4 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg flex items-center justify-center gap-4"
-            >
-              {downloading
-                ? "Erstelle ZIP..."
-                : `${selectedPhotoIds.length} herunterladen`}
-            </button>
+<div className="flex flex-col items-center gap-5">
+  <button
+    onClick={downloadSelectedPhotos}
+    disabled={
+      downloading || selectedPhotoIds.length === 0
+    }
+    className="w-full bg-white/60 text-[#3b3128] border border-[#d8cfc3] px-6 py-4 rounded-2xl font-bold hover:bg-white/80 transition disabled:opacity-50 shadow-lg flex items-center justify-center gap-4"
+  >
+    {downloading
+      ? "Erstelle ZIP..."
+      : `${selectedPhotoIds.length} herunterladen`}
+  </button>
 
-            <Link
-              href={`/upload/${weddingId}`}
-              className="w-full bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4"
-            >
-              Foto hochladen
-            </Link>
-          </div>
+  <button
+    onClick={downloadAllPhotos}
+    disabled={downloading || photos.length === 0}
+    className="w-full bg-[#3b3128] text-white px-6 py-4 rounded-2xl font-bold hover:bg-[#2d241d] transition disabled:opacity-50 shadow-lg flex items-center justify-center gap-4"
+  >
+    {downloading
+      ? "Erstelle ZIP..."
+      : `Alle ${photos.length} Bilder herunterladen`}
+  </button>
+
+  {isAdmin && (
+    <button
+      onClick={deleteAllPhotos}
+      disabled={deletingPhotoId === "all" || photos.length === 0}
+      className="w-full bg-red-700 text-white px-6 py-4 rounded-2xl font-bold hover:bg-red-800 transition disabled:opacity-50 shadow-lg flex items-center justify-center gap-4"
+    >
+      {deletingPhotoId === "all"
+        ? "Löscht alle Bilder..."
+        : `Alle ${photos.length} Bilder löschen`}
+    </button>
+  )}
+
+  <Link
+    href={`/upload/${weddingId}`}
+    className="w-full bg-[#c8ad72] text-white px-6 py-4 rounded-2xl font-bold hover:opacity-90 transition shadow-lg flex items-center justify-center gap-4"
+  >
+    Foto hochladen
+  </Link>
+</div>
         </div>
      
 
@@ -960,7 +1078,7 @@ async function deletePhoto(photoId: string) {
               {deletingPhotoId === selectedPhoto.id
                 ? "Löscht..."
                 : "Löschen"}
-                
+
             </button>
           )}
 
