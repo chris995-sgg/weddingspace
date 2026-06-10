@@ -3,17 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 
 import {
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
 } from "firebase/firestore";
 
 import { useParams } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
 
 type Photo = {
   id: string;
@@ -54,6 +56,10 @@ export default function GalleryPage() {
     useState(0);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+
   const [eventTitle, setEventTitle] = useState("");
   const [galleryEnabled, setGalleryEnabled] = useState(true);
 
@@ -133,6 +139,36 @@ export default function GalleryPage() {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    setCurrentUser(user);
+
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+
+    try {
+      const weddingRef = doc(db, "weddings", weddingId);
+      const weddingSnap = await getDoc(weddingRef);
+
+      if (!weddingSnap.exists()) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const weddingData = weddingSnap.data();
+
+      setIsAdmin(weddingData.ownerId === user.uid);
+    } catch (error) {
+      console.error(error);
+      setIsAdmin(false);
+    }
+  });
+
+  return () => unsubscribe();
+}, [weddingId]);
 
   useEffect(() => {
     const weddingRef = doc(db, "weddings", weddingId);
@@ -606,6 +642,29 @@ if (!galleryEnabled) {
   );
 }
 
+async function deletePhoto(photoId: string) {
+  if (!isAdmin) return;
+
+  const confirmed = confirm(
+    "Möchtest du dieses Bild wirklich aus der Galerie löschen?"
+  );
+
+  if (!confirmed) return;
+
+  setDeletingPhotoId(photoId);
+
+  try {
+    await deleteDoc(
+      doc(db, "weddings", weddingId, "photos", photoId)
+    );
+  } catch (error) {
+    console.error(error);
+    alert("Das Bild konnte nicht gelöscht werden.");
+  }
+
+  setDeletingPhotoId(null);
+}
+
   return (
     <main className="min-h-[100dvh] flex items-start md:items-center justify-center pt-28 md:pt-28 p-6 relative text-black">
       {showInitialLoader && (
@@ -733,23 +792,38 @@ if (!galleryEnabled) {
                         </div>
                       )}
                     </button>
+            <button
+              onClick={() =>
+                togglePhotoSelection(photo.id)
+              }
+              className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
+                isSelected
+                  ? "bg-[#c8ad72] border-white"
+                  : "bg-white/80 border-white"
+              }`}
+            >
+              {isSelected ? "✓" : ""}
+            </button>
 
-                    <button
-                      onClick={() =>
-                        togglePhotoSelection(photo.id)
-                      }
-                      className={`absolute top-3 right-3 w-7 h-7 rounded-full shadow-lg border-2 ${
-                        isSelected
-                          ? "bg-[#c8ad72] border-white"
-                          : "bg-white/80 border-white"
-                      }`}
-                    >
-                      {isSelected ? "✓" : ""}
-                    </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deletePhoto(photo.id);
+                }}
+                disabled={deletingPhotoId === photo.id}
+                className="absolute top-3 left-3 z-20 bg-red-700 text-white h-8 w-8 rounded-full flex items-center justify-center shadow-lg hover:bg-red-800 transition disabled:opacity-50"
+                title="Bild löschen"
+                aria-label="Bild löschen"
+              >
+                {deletingPhotoId === photo.id ? "…" : "×"}
+              </button>
+            )}
 
-                    <p className="mt-2 text-center text-sm text-[#6b5c4d]">
-                      {photo.guestName || "Gast"}
-                    </p>
+            <p className="mt-2 text-center text-sm text-[#6b5c4d]">
+              {photo.guestName || "Gast"}
+            </p>
                   </div>
                 );
               })}
@@ -873,12 +947,29 @@ if (!galleryEnabled) {
                 Hochgeladen von {selectedPhoto.guestName}
               </p>
 
-              <button
-                onClick={() => setSelectedPhoto(null)}
-                className="bg-white/90 text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg"
-              >
-                Schließen
-              </button>
+              <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              onClick={async () => {
+                await deletePhoto(selectedPhoto.id);
+                setSelectedPhoto(null);
+              }}
+              disabled={deletingPhotoId === selectedPhoto.id}
+              className="bg-red-700 text-white px-4 py-2 rounded-2xl font-bold shadow-lg disabled:opacity-50"
+            >
+              {deletingPhotoId === selectedPhoto.id
+                ? "Löscht..."
+                : "Löschen"}
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedPhoto(null)}
+            className="bg-white/90 text-[#3b3128] px-4 py-2 rounded-2xl font-bold shadow-lg"
+          >
+            Schließen
+          </button>
+        </div>
             </div>
 
             <img
