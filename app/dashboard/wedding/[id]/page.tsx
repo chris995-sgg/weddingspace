@@ -231,13 +231,12 @@ setWedding((prev) =>
       Bilder sofort sichtbar
     </span>
 
-    <span
-      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
-        galleryVisibilityMode === "instant"
-          ? "bg-[#c8ad72] border-[#c8ad72]"
-          : "bg-white border-[#c8ad72]"
-      }`}
-    />
+    <span className="h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full bg-[#c8ad72] shadow-md flex items-center justify-center transition">
+      {galleryVisibilityMode === "instant" && (
+        <span className="h-3 w-3 rounded-full bg-white"></span>
+      )}
+    </span>
+
   </button>
 
   <button
@@ -249,15 +248,13 @@ setWedding((prev) =>
       Bilder erst ab Datum sichtbar
     </span>
 
-    <span
-      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
-        galleryVisibilityMode === "date"
-          ? "bg-[#c8ad72] border-[#c8ad72]"
-          : "bg-white border-[#c8ad72]"
-      }`}
-    />
-  </button>
-</div>
+    <span className="h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full bg-[#c8ad72] shadow-md flex items-center justify-center transition">
+      {galleryVisibilityMode === "date" && (
+        <span className="h-3 w-3 rounded-full bg-white"></span>
+      )}
+    </span>
+      </button>
+    </div>
 
   {galleryVisibilityMode === "date" && (
     <div className="mt-5">
@@ -301,14 +298,12 @@ setWedding((prev) =>
       </p>
     </div>
 
-    <span
-      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
-        galleryEnabled
-          ? "bg-[#c8ad72] border-[#c8ad72]"
-          : "bg-white border-[#c8ad72]"
-      }`}
-    />
-  </button>
+      <span className="h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full bg-[#c8ad72] shadow-md flex items-center justify-center transition">
+        {galleryEnabled && (
+          <span className="h-3 w-3 rounded-full bg-white"></span>
+        )}
+      </span>
+        </button>
 
   <button
     type="button"
@@ -325,13 +320,11 @@ setWedding((prev) =>
       </p>
     </div>
 
-    <span
-      className={`h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full border-4 shadow-md transition ${
-        rsvpEnabled
-          ? "bg-[#c8ad72] border-[#c8ad72]"
-          : "bg-white border-[#c8ad72]"
-      }`}
-    />
+      <span className="h-8 w-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full bg-[#c8ad72] shadow-md flex items-center justify-center transition">
+        {rsvpEnabled && (
+          <span className="h-3 w-3 rounded-full bg-white"></span>
+        )}
+      </span>
   </button>
 </div>
 
