@@ -16,6 +16,7 @@ export default function RsvpPage() {
   const weddingId = params.id as string;
 
   const [eventTitle, setEventTitle] = useState("");
+  const [loadingEvent, setLoadingEvent] = useState(true);
   const [guestName, setGuestName] = useState("");
   const [status, setStatus] = useState<"yes" | "no">("yes");
   const [guestCount, setGuestCount] = useState("1");
@@ -24,18 +25,30 @@ export default function RsvpPage() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    async function loadWedding() {
+  async function loadWedding() {
+    try {
       const weddingRef = doc(db, "weddings", weddingId);
       const snapshot = await getDoc(weddingRef);
 
-      if (!snapshot.exists()) return;
+      if (!snapshot.exists()) {
+        setEventTitle("Hochzeit");
+        setLoadingEvent(false);
+        return;
+      }
 
       const data = snapshot.data();
-      setEventTitle(data.title || "Hochzeit");
-    }
 
-    loadWedding();
-  }, [weddingId]);
+      setEventTitle(data.title || "Hochzeit");
+      setLoadingEvent(false);
+    } catch (error) {
+      console.error(error);
+      setEventTitle("Hochzeit");
+      setLoadingEvent(false);
+    }
+  }
+
+  loadWedding();
+}, [weddingId]);
 
   async function submitRsvp() {
     if (!guestName.trim()) {
@@ -72,6 +85,26 @@ if (
 
     setSending(false);
   }
+
+  if (loadingEvent) {
+  return (
+    <main className="min-h-[100dvh] flex items-center justify-center p-6 text-black">
+      <div className="w-full max-w-md bg-white/60 backdrop-blur rounded-[2rem] p-8 shadow-2xl border border-white/50 text-center">
+        <div className="mb-6 flex justify-center items-center">
+          <div className="w-20 h-px bg-[#c8ad72]"></div>
+          <span className="mx-4 text-[#c8ad72] text-xl">♥</span>
+          <div className="w-20 h-px bg-[#c8ad72]"></div>
+        </div>
+
+        <div className="h-10 w-10 mx-auto rounded-full border-4 border-[#c8ad72] border-t-transparent animate-spin"></div>
+
+        <p className="text-[#6b5c4d] mt-5 font-semibold">
+          Rückmeldung wird geladen...
+        </p>
+      </div>
+    </main>
+  );
+}
 
   if (sent) {
     return (
