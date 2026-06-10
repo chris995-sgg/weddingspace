@@ -960,6 +960,7 @@ async function deletePhoto(photoId: string) {
               {deletingPhotoId === selectedPhoto.id
                 ? "Löscht..."
                 : "Löschen"}
+                
             </button>
           )}
 
