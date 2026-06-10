@@ -16,6 +16,41 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
 
+  const CONCURRENT_UPLOADS = 10;
+  const UPLOAD_ATTEMPTS = 10;
+
+  function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetries(
+  url: string,
+  options: RequestInit,
+  attempts = UPLOAD_ATTEMPTS
+) {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok) {
+        return response;
+      }
+
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < attempts) {
+      await wait(50 * attempt);
+    }
+  }
+
+  throw lastError;
+}
+
   useEffect(() => {
   async function loadWeddingSettings() {
     try {
@@ -39,32 +74,29 @@ export default function UploadPage() {
   loadWeddingSettings();
 }, [weddingId]);
 
-  async function uploadToDropboxWithRetries(
-    uploadLink: string,
-    file: File
-  ) {
-    for (let attempt = 1; attempt <= 10; attempt++) {
-      const response = await fetch(uploadLink, {
+ async function uploadToDropboxWithRetries(
+  uploadLink: string,
+  file: File
+) {
+  try {
+    await fetchWithRetries(
+      uploadLink,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/octet-stream",
         },
         body: file,
-      });
+      },
+      UPLOAD_ATTEMPTS
+    );
 
-      if (response.ok) {
-        return true;
-      }
-
-      if (attempt < 10) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 100)
-        );
-      }
-    }
-
+    return true;
+  } catch (error) {
+    console.error("Dropbox Upload endgültig fehlgeschlagen:", error);
     return false;
   }
+}
 
   async function uploadPhoto() {
     if (!guestName.trim()) {
@@ -82,8 +114,7 @@ export default function UploadPage() {
     const failedUploads: string[] = [];
 
     try {
-      const CONCURRENT_UPLOADS = 10;
-
+    
       for (
         let i = 0;
         i < files.length;
@@ -109,8 +140,9 @@ export default function UploadPage() {
           })
         );
 
-        const uploadLinksResponse = await fetch(
+          const uploadLinksResponse = await fetchWithRetries(
           "/api/create-upload-links",
+  
           {
             method: "POST",
             headers: {
@@ -154,8 +186,9 @@ export default function UploadPage() {
                 );
               }
 
-              const completeResponse = await fetch(
+                const completeResponse = await fetchWithRetries(
                 "/api/complete-upload",
+                  
                 {
                   method: "POST",
                   headers: {
