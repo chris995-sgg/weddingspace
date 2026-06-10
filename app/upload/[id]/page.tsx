@@ -114,116 +114,100 @@ async function fetchWithRetries(
     const failedUploads: string[] = [];
 
     try {
-    
-      for (
-        let i = 0;
-        i < files.length;
-        i += CONCURRENT_UPLOADS
-      ) {
-        const batch = files.slice(
-          i,
-          i + CONCURRENT_UPLOADS
-        );
 
-        const preparedBatch = await Promise.all(
-          batch.map(async (file) => {
-            let uploadFile = file;
+      let nextIndex = 0;
 
-            if (file.size > 6 * 1024 * 1024) {
-              uploadFile = await imageCompression(file, {
-                maxSizeMB: 4,
-                useWebWorker: true,
-              });
-            }
+async function uploadOneFile(originalFile: File) {
+  let uploadFile = originalFile;
 
-            return uploadFile;
-          })
-        );
+  if (originalFile.size > 6 * 1024 * 1024) {
+    uploadFile = await imageCompression(originalFile, {
+      maxSizeMB: 4,
+      useWebWorker: true,
+    });
+  }
 
-          const uploadLinksResponse = await fetchWithRetries(
-          "/api/create-upload-links",
-  
+  const uploadLinksResponse = await fetchWithRetries(
+    "/api/create-upload-links",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        weddingId,
+        files: [
           {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              weddingId,
-              files: preparedBatch.map((file) => ({
-                fileName: file.name,
-                sizeBytes: file.size,
-              })),
-            }),
-          }
-        );
+            fileName: uploadFile.name,
+            sizeBytes: uploadFile.size,
+          },
+        ],
+      }),
+    }
+  );
 
-        const uploadLinksData =
-          await uploadLinksResponse.json();
+  const uploadLinksData = await uploadLinksResponse.json();
 
-        if (!uploadLinksResponse.ok) {
-          throw new Error(
-            uploadLinksData.error ||
-              "Upload-Links Fehler"
-          );
-        }
+  const uploadData = uploadLinksData.uploads[0];
 
-        await Promise.all(
-          preparedBatch.map(async (file, index) => {
-            try {
-              const uploadData =
-                uploadLinksData.uploads[index];
+  const uploadSuccess = await uploadToDropboxWithRetries(
+    uploadData.uploadLink,
+    uploadFile
+  );
 
-              const uploadSuccess =
-                await uploadToDropboxWithRetries(
-                  uploadData.uploadLink,
-                  file
-                );
+  if (!uploadSuccess) {
+    throw new Error("Dropbox Upload fehlgeschlagen");
+  }
 
-              if (!uploadSuccess) {
-                throw new Error(
-                  "Dropbox Upload fehlgeschlagen"
-                );
-              }
+  const completeResponse = await fetchWithRetries(
+    "/api/complete-upload",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        weddingId,
+        guestName,
+        fileName: uploadData.fileName,
+        dropboxPath: uploadData.dropboxPath,
+        sizeBytes: uploadFile.size,
+      }),
+    }
+  );
 
-                const completeResponse = await fetchWithRetries(
-                "/api/complete-upload",
-                  
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type":
-                      "application/json",
-                  },
-                  body: JSON.stringify({
-                    weddingId,
-                    guestName,
-                    fileName: uploadData.fileName,
-                    dropboxPath:
-                      uploadData.dropboxPath,
-                    sizeBytes: file.size,
-                  }),
-                }
-              );
+  const completeData = await completeResponse.json();
 
-              const completeData =
-                await completeResponse.json();
+  if (!completeResponse.ok) {
+    throw new Error(
+      completeData.error ||
+        "Upload Abschluss fehlgeschlagen"
+    );
+  }
 
-              if (!completeResponse.ok) {
-                throw new Error(
-                  completeData.error ||
-                    "Upload Abschluss fehlgeschlagen"
-                );
-              }
+  setUploadedCount((prev) => prev + 1);
+}
 
-              setUploadedCount((prev) => prev + 1);
-            } catch (error) {
-              console.error(error);
-              failedUploads.push(file.name);
-            }
-          })
-        );
-      }
+async function uploadWorker() {
+  while (nextIndex < files.length) {
+    const file = files[nextIndex];
+    nextIndex++;
+
+    try {
+      await uploadOneFile(file);
+    } catch (error) {
+      console.error(error);
+      failedUploads.push(file.name);
+    }
+  }
+}
+
+await Promise.all(
+  Array.from(
+    { length: Math.min(CONCURRENT_UPLOADS, files.length) },
+    () => uploadWorker()
+  )
+);
 
       if (failedUploads.length > 0) {
         alert(
