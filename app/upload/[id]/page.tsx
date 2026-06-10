@@ -43,7 +43,7 @@ export default function UploadPage() {
     uploadLink: string,
     file: File
   ) {
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 10; attempt++) {
       const response = await fetch(uploadLink, {
         method: "POST",
         headers: {
@@ -56,7 +56,7 @@ export default function UploadPage() {
         return true;
       }
 
-      if (attempt < 5) {
+      if (attempt < 10) {
         await new Promise((resolve) =>
           setTimeout(resolve, 100)
         );
